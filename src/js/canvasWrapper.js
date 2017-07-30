@@ -3,7 +3,7 @@
 /**
  * Osztály a canvas elem API-jának absztrahálására.
  */
-export class canvasWrapper {
+export default class CanvasWrapper {
     constructor(width, height, canvasId, ctxDimension) {
         this.width = width;
         this.height = height;
