@@ -23,6 +23,7 @@
   "homepage": "https://github.com/Luminted/Szakdolgozat-SmartSnake#readme",
   "dependencies": {
     "babel-preset-es2015": "^6.24.1",
+    "express": "^4.15.4",
     "mainloop.js": "^1.0.4",
     "webpack-dev-server": "^2.6.1"
   },
