@@ -1,52 +1,63 @@
 import Board from './board.js'
 import Snake from './snake.js'
+import cloneDeep from 'lodash/cloneDeep'
 
 
-let maxX
-let maxY
-let _board
-let _snake
+const _snake = new Snake();
+const _board = new Board();
 
-function init() {
-    maxX = 30;
-    maxY = 30;
-    _board = new Board(maxX, maxY);
-    _snake = new Snake(15,15);
-    placeSnakeOnBoard(_snake);
-}
-
-
-function move(x,y){
-    _snake.move(x,y);
-}
-
-function moveSnake(){
+function moveSnake() {
     _snake.move();
-    placeSnakeOnBoard(_snake);
+    putSnakeOnBoard(_snake, _board);
 }
 
-function getBoardTiles(){
-    let boardTiles = [];
-    for(let row of _board){
-        for(let tile of row){
-            boardStatus.push(tile.status);
+function getBoardStatus() {
+    let tiles = [];
+    for (let i = 0; i < 30; ++i) {
+        for (let j = 0; j < 30; ++j) {
+            tiles.push(_board.getTileByPosition(i, j));
         }
     }
-    console.log(boardTiles);
-    return boardTiles;
+    return tiles;
 }
 
-function placeSnakeOnBoard(snake){
-    let snakeBody = _snake.getBody();
-    for(let node of snakeBody){
-        _board.setTileStatus(node.x, node.y, 'SNAKE');
+
+function putSnakeOnBoard(snake, board) {
+    const snakeBody = snake.getBody();
+    //TODO: This is not a nice way to do this. Deepcopy a reference to the board instead
+    for (let i = 0; i < 30; ++i) {
+        for (let j = 0; j < 30; ++j) {
+            board.getTileByPosition(i, j).status = 'EMPTY';
+        }
+    }
+    for (let part of snakeBody) {
+        let bodyPosX = part.posX;
+        let bodyPosY = part.posY;
+        let correspondingTile = board.getTileByPosition(bodyPosX, bodyPosY);
+        correspondingTile.status = 'SNAKE';
     }
 }
 
-
+document.addEventListener('keyup', function(event){
+    event.preventDefault();
+    switch(event.key){
+        case 'ArrowLeft':
+            _snake.setDirection('LEFT');
+            break;
+        case 'ArrowUp':
+            _snake.setDirection('UP');
+            break;
+        case 'ArrowRight':
+            _snake.setDirection('RIGHT');
+            break;
+        case 'ArrowDown':
+            _snake.setDirection('DOWN');
+            break;
+    }
+    console.log(_snake._direction);
+}, false)
 
 export {
-    init,
-    getBoardTiles,
-    moveSnake
+    moveSnake,
+    getBoardStatus
 }

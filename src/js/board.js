@@ -1,59 +1,27 @@
 "use strict"
 
-export default class Board{
-    constructor(numberOfTilesX, numberOfTilesY){
-        this._board = new Array(numberOfTilesX);
-        this._maxX = numberOfTilesX;
-        this._maxY = numberOfTilesY;
-
-        this.initBoard(numberOfTilesX, numberOfTilesY);
-    }
-
-    initBoard(x,y){
-        for(let i = 0; i < x; ++i){
-            this._board[i] = new Array(this._maxY);
-            for(let j = 0; j < this._maxY; ++j){
-                let tile = {
+export default class Board {
+    constructor(width = 30, length = 30) {
+        console.info('Initializing board...');
+        this._width = width;
+        this._length = length;
+        this._board = [];
+        for (let i = 0; i < this._width; ++i) {
+            this._board.push([]);
+            for (let j = 0; j < this._length; ++j) {
+                this._board[i].push({
+                    id: '' + i + j,
                     posX: i,
                     posY: j,
-                    info: {
-                        status: 'FREE',
-                    }
-                }
-                this._board[i][j] = tile;
+                    status: 'EMPTY'
+                })
             }
         }
+        console.info('Board initialized' , this._board);
     }
 
-    getTileStatus(x,y){
-        if(x <= this._maxX || y <= this._maxY){
-            return this._board[x][y].info.status;
-        }else{
-            console.error('Given index over the array limit: ', {x, y});
-        }
+    getTileByPosition(x,y){
+        return this._board[x][y];
     }
 
-    getTile(x,y){
-        if(x <= this._maxX || y <= this._maxY){
-            return this._board[x][y];
-        }else{
-            console.error('Given index over the array limit: ', {x, y});
-        }
-    }
-
-    getMaxX(){
-        return this._maxX;
-    }
-
-    getMaxY(){
-        return this._maxY;
-    }
-
-    move(x,y){
-        this.setTileStatus(x,y,'HEAD');
-    }
-
-    setTileStatus(x,y,status){
-        this.getTile(x,y)['info']['status'] = status;
-    }
 }

@@ -81,4 +81,8 @@ export default class CanvasWrapper {
     isCanvasObject(object) {
         return (object.canvasObjectType !== void 0);
     }
+
+    clearScene(){
+        this._scene = [];
+    }
 }
