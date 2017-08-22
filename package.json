@@ -26,12 +26,13 @@
     "express": "^4.15.4",
     "mainloop.js": "^1.0.4",
     "webpack-dev-server": "^2.6.1",
-    "webpack": "^3.4.1"
-  },
-  "devDependencies": {
+    "webpack": "^3.4.1",
     "babel-cli": "^6.24.1",
     "babel-core": "^6.25.0",
     "babel-loader": "^7.1.1",
     "babel-preset-env": "^1.6.0"
+  },
+  "devDependencies": {
+    
   }
 }
