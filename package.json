@@ -4,7 +4,7 @@
   "description": "Snake játék megvalósítása útvonalkereséssel",
   "main": "main.js",
   "scripts": {
-    "test": "test"
+    "start": "webpack-dev-server"
   },
   "repository": {
     "type": "git",
