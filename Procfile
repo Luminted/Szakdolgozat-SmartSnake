@@ -1,1 +1,1 @@
-web: npx webpack-dev-server
+web: 
