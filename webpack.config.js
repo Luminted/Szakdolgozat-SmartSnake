@@ -10,7 +10,7 @@ module.exports = {
   },
   devServer: {
   contentBase: path.resolve(__dirname, 'src/dist'),
-  public: "snakeai.herokuapp.com",
+  public: "snake-ai.herokuapp.com",
   compress: true,
 },
   devtool: 'source-map',
