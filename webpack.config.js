@@ -1,6 +1,6 @@
 var path = require('path');
 var webpack = require('webpack');
-var PORT = ($PORT || 5000);
+var PORT = (process.env.PORT || 5000);
 console.log(PORT);
 
 module.exports = {
