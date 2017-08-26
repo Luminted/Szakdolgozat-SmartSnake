@@ -10,7 +10,7 @@ module.exports = {
   },
   devServer: {
   contentBase: path.resolve(__dirname, 'src/dist'),
-  public: "vast-cliffs-16328.herokuapp.com",
+  public: "snakeai.herokuapp.com",
   compress: true,
 },
   devtool: 'source-map',
