@@ -1,1 +1,1 @@
-web: node console.log($PORT)
+web: webpack-dev-server

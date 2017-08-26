@@ -1,5 +1,7 @@
 var path = require('path');
 var webpack = require('webpack');
+var PORT = ($PORT || 5000);
+console.log(PORT);
 
 module.exports = {
   entry: './src/js/main.js',
@@ -10,7 +12,7 @@ module.exports = {
   devServer: {
   contentBase: path.resolve(__dirname, 'src/dist'),
   compress: true,
-  port: 5000
+  port: PORT
 },
   devtool: 'source-map',
   module: {
