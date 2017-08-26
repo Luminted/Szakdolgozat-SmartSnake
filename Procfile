@@ -1,1 +1,1 @@
-web: node process.env.PORT = $PORT
+web: webpack-dev-server $PORT

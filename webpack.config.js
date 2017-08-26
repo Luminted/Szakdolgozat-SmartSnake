@@ -12,7 +12,6 @@ module.exports = {
   devServer: {
   contentBase: path.resolve(__dirname, 'src/dist'),
   compress: true,
-  port: port
 },
   devtool: 'source-map',
   module: {
