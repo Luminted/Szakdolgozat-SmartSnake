@@ -3,8 +3,7 @@
   "version": "0.0.0",
   "description": "Snake játék megvalósítása útvonalkereséssel",
   "main": "main.js",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Luminted/Szakdolgozat-SmartSnake.git"
@@ -31,7 +30,5 @@
     "babel-loader": "^7.1.1",
     "babel-preset-env": "^1.6.0"
   },
-  "devDependencies": {
-    
-  }
+  "devDependencies": {}
 }

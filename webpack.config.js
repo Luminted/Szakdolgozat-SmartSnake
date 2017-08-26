@@ -1,7 +1,6 @@
 var path = require('path');
 var webpack = require('webpack');
-var port = (process.env.PORT || 5000);
-console.log(process.env.PORT);
+
 
 module.exports = {
   entry: './src/js/main.js',

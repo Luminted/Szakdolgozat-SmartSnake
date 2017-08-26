@@ -1,1 +1,1 @@
-web: webpack-dev-server $PORT
+web: webpack-dev-server --port $PORT
