@@ -38,7 +38,7 @@ function putSnakeOnBoard(snake, board) {
     }
 }
 
-document.addEventListener('keyup', function(event){
+document.addEventListener('keydown', function(event){
     event.preventDefault();
     switch(event.key){
         case 'ArrowLeft':
