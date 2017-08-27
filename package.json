@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "description": "Snake játék megvalósítása útvonalkereséssel",
   "main": "main.js",
-  "scripts": {},
+  "scripts": {
+    "serve": "webpack-dev-server --config webpack.config.dev.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Luminted/Szakdolgozat-SmartSnake.git"
