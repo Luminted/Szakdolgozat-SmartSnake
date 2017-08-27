@@ -41,7 +41,7 @@ function drawTiles(tiles){
 /**
  * Játék ablakának inicializálása
  */
-function initViewPort(hoistOn = 'body', viewPortX = 500, viewPortY = 500) {
+function initViewPort(hoistOn = 'viewport-container', viewPortX = 500, viewPortY = 500) {
     console.info('Initiating Viewport');
     viewPort = document.createElement('canvas');
     viewPort.id = 'viewPort';
@@ -57,7 +57,7 @@ function initViewPort(hoistOn = 'body', viewPortX = 500, viewPortY = 500) {
 
     //Hozzáadás a DOM-hoz
     viewPortWrapperElement.appendChild(viewPort);
-    document.querySelector(hoistOn).appendChild(viewPortWrapperElement);
+    document.getElementById(hoistOn).appendChild(viewPortWrapperElement);
     canvas = new CanvasWrapper(500, 500, 'viewPort', '2d');
 
     console.info('Viewport initiated');
