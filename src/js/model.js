@@ -38,19 +38,22 @@ function putSnakeOnBoard(snake, board) {
     }
 }
 
-document.addEventListener('keydown', function(event){
-    event.preventDefault();
-    switch(event.key){
+document.addEventListener('keydown', function (event) {
+    switch (event.key) {
         case 'ArrowLeft':
+            event.preventDefault();
             _snake.setDirection('LEFT');
             break;
         case 'ArrowUp':
+            event.preventDefault();
             _snake.setDirection('UP');
             break;
         case 'ArrowRight':
+            event.preventDefault();
             _snake.setDirection('RIGHT');
             break;
         case 'ArrowDown':
+            event.preventDefault();
             _snake.setDirection('DOWN');
             break;
     }
