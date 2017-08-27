@@ -1,10 +1,14 @@
 import Board from './board.js'
 import Snake from './snake.js'
+import Pill from './pill.js'
 import cloneDeep from 'lodash/cloneDeep'
 
+const baseWidth = 30;
+const baseHeight = 30;
 
 const _snake = new Snake();
 const _board = new Board();
+const _pill = new Pill(baseWidth, baseHeight);
 
 function moveSnake() {
     _snake.move();
@@ -21,6 +25,26 @@ function getBoardStatus() {
     return tiles;
 }
 
+function putPillOnBoard() {
+    let position = _pill.getPosition();
+    _board.getTileByPosition(position.posX, position.posY).status = 'PILL';
+}
+
+//TODO: clean this up
+function checkHeadCollision() {
+    let head = _snake.getHead();
+    if (head.posX >= baseWidth || head.posY >= baseHeight || head.posX < 0 || head.posY < 0) {
+        return 'WALL_COLLISION';
+    };
+    if (head.posY === _pill._posY && head.posX === _pill._posX) {
+        let nourishment = _pill.getNourishment();
+        _snake.eat(nourishment);
+        _pill.changePositionRandomly();
+        console.log(_snake.body);
+        return 'PILL_COLLISION';
+    }
+    return void 0;
+}
 
 function putSnakeOnBoard(snake, board) {
     const snakeBody = snake.getBody();
@@ -62,5 +86,7 @@ document.addEventListener('keydown', function (event) {
 
 export {
     moveSnake,
-    getBoardStatus
+    getBoardStatus,
+    putPillOnBoard,
+    checkHeadCollision
 }

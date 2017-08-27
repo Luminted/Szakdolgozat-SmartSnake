@@ -57,5 +57,16 @@ export default class Snake {
         return this._body;
     }
 
+    getHead(){
+        return this._body[0];
+    }
 
+    eat(nourishment){
+        let tailNode = this._body[this._length - 1];
+
+        for(let i = 0; i < nourishment; i++){
+            this._body.push({posX: tailNode.posX, posY: tailNode.posY});
+        }
+        this._length = this._body.length;
+    }
 }
