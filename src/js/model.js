@@ -1,18 +1,39 @@
-import Board from './board.js'
-import Snake from './snake.js'
-import Pill from './pill.js'
-import cloneDeep from 'lodash/cloneDeep'
+import Board from './board.js';
+import Snake from './snake.js';
+import Pill from './pill.js';
+import { calculateStepCollisionType } from './physics';
+
+import cloneDeep from 'lodash/cloneDeep';
 
 const baseWidth = 30;
 const baseHeight = 30;
 
-const _snake = new Snake();
+
+
+const _snake = new Snake(10);
 const _board = new Board();
-const _pill = new Pill(baseWidth, baseHeight);
+const _pill = new Pill();
+let tmpDirection = _snake.getDirection();
 
 function moveSnake() {
-    _snake.move();
-    putSnakeOnBoard(_snake, _board);
+    let nextDirection = _snake.handleInput(tmpDirection);
+    _snake.setDirection(nextDirection);
+    _snake.calculateVelocity();
+    const collision = calculateStepCollisionType(_snake, _board);
+    if (collision === 'WALL_COLLISION' || collision === 'BODY_COLLISION') {
+
+    } else if (collision === 'PILL_COLLISION') {
+        let nourishment = _pill.getNourishment();
+        _snake.eat(nourishment);
+        let dimensions = _board.getDimensions();
+        _pill.changePositionRandomly(dimensions.dimX, dimensions.dimY);
+        _snake.move();
+        putSnakeOnBoard(_snake, _board);
+    } else {
+        _snake.move();
+        putSnakeOnBoard(_snake, _board);
+    }
+    return collision;
 }
 
 function getBoardStatus() {
@@ -30,21 +51,6 @@ function putPillOnBoard() {
     _board.getTileByPosition(position.posX, position.posY).status = 'PILL';
 }
 
-//TODO: clean this up
-function checkHeadCollision() {
-    let head = _snake.getHead();
-    if (head.posX >= baseWidth || head.posY >= baseHeight || head.posX < 0 || head.posY < 0) {
-        return 'WALL_COLLISION';
-    };
-    if (head.posY === _pill._posY && head.posX === _pill._posX) {
-        let nourishment = _pill.getNourishment();
-        _snake.eat(nourishment);
-        _pill.changePositionRandomly();
-        console.log(_snake.body);
-        return 'PILL_COLLISION';
-    }
-    return void 0;
-}
 
 function putSnakeOnBoard(snake, board) {
     const snakeBody = snake.getBody();
@@ -66,19 +72,19 @@ document.addEventListener('keydown', function (event) {
     switch (event.key) {
         case 'ArrowLeft':
             event.preventDefault();
-            _snake.setDirection('LEFT');
+            tmpDirection = _snake.handleInput('LEFT');
             break;
         case 'ArrowUp':
             event.preventDefault();
-            _snake.setDirection('UP');
+            tmpDirection = _snake.handleInput('UP');
             break;
         case 'ArrowRight':
             event.preventDefault();
-            _snake.setDirection('RIGHT');
+            tmpDirection = _snake.handleInput('RIGHT');
             break;
         case 'ArrowDown':
             event.preventDefault();
-            _snake.setDirection('DOWN');
+            tmpDirection = _snake.handleInput('DOWN');
             break;
     }
     console.log(_snake._direction);
@@ -88,5 +94,4 @@ export {
     moveSnake,
     getBoardStatus,
     putPillOnBoard,
-    checkHeadCollision
 }
