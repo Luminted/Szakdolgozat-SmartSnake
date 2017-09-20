@@ -1,18 +1,17 @@
 "use strict";
 
 export default class Pill {
-    constructor(width, height, nourishment = 1){
-        this._boardWidth = width;
-        this._boardHeight = height;
-        this._posX = Math.round(Math.random() * width);
-        this._posY = Math.round(Math.random() * height);
+    constructor(nourishment = 1){
+        //TODO: make initial position into something nicer
+        this._posX = 15;
+        this._posY = 15;
         this._nourishment = nourishment;
         console.log(this._posX, this._posY);
     }
 
-    changePositionRandomly(){
-        this._posX = Math.round(Math.random() * this._boardWidth);
-        this._posY = Math.round(Math.random() * this._boardHeight);
+    changePositionRandomly(limitX, limitY){
+        this._posX = Math.floor(Math.random() * limitX);
+        this._posY = Math.floor(Math.random() * limitY);
         console.log(this._posX, this._posY);
     }
 
