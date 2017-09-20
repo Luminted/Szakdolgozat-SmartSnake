@@ -6,7 +6,6 @@ import {
     moveSnake,
     getBoardStatus,
     putPillOnBoard,
-    checkHeadCollision
 } from './model';
 
 let viewPort
@@ -18,24 +17,23 @@ initViewPort();
 
 
 //Játékloop
-Mainloop.setMaxAllowedFPS(3).setBegin(() => {}).setUpdate(() => {}).setDraw(() => {
+Mainloop.setMaxAllowedFPS(3).setBegin(() => { }).setUpdate(() => { }).setDraw(() => {
 
 }).setEnd(() => {
-    let collision = checkHeadCollision();
-    console.log(collision)
-    if(collision === 'WALL_COLLISION'){
+    let collision = moveSnake();
+    putPillOnBoard();
+    console.log(collision);
+    if (collision === 'WALL_COLLISION') {
         console.log('GAME OVER')
-    }else{
-    moveSnake();
+    }
     putPillOnBoard();
     let tiles = getBoardStatus();
     drawTiles(tiles);
     canvas.renderScene();
     canvas.clearScene();
-    }
 }).start();
 
-
+//TODO: This should be in a separate render module
 function drawTiles(tiles) {
     for (let tile of tiles) {
         if (tile.status === 'SNAKE') {

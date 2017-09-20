@@ -24,4 +24,11 @@ export default class Board {
         return this._board[x][y];
     }
 
+    getDimensions(){
+        return {
+            dimX:  this._width,
+            dimY: this._length
+        }
+    }
+
 }
