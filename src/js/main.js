@@ -17,7 +17,7 @@ initViewPort();
 
 
 //Játékloop
-Mainloop.setMaxAllowedFPS(3).setBegin(() => { }).setUpdate(() => { }).setDraw(() => {
+Mainloop.setMaxAllowedFPS(20).setBegin(() => { }).setUpdate(() => { }).setDraw(() => {
 
 }).setEnd(() => {
     let collision = moveSnake();
