@@ -1,33 +1,51 @@
 "use strict";
 
-export default class Pill {
-    constructor(nourishment = 1){
+import Entity from './AbstractClasses/Entity';
+import cloneDeep from 'lodash/cloneDeep';
+import log from 'loglevel';
+
+export default class Pill extends Entity{
+    constructor(callbacks, nourishment = 1){
+        log.info('Initializing Pill...');
+        super();
+
+        this.state = {};
+        this.callbacks = callbacks;
         //TODO: make initial position into something nicer
-        this._posX = 15;
-        this._posY = 15;
-        this._nourishment = nourishment;
-        console.log(this._posX, this._posY);
+        this.state.posX = 15;
+        this.state.posY = 15;
+        this.state.nourishment = nourishment;
+        log.info('Pill initialized', this.state);
     }
 
-    changePositionRandomly(limitX, limitY){
-        this._posX = Math.floor(Math.random() * limitX);
-        this._posY = Math.floor(Math.random() * limitY);
-        console.log(this._posX, this._posY);
+    update() {
+        log.info('PILL')
     }
 
-    changePosition(x, y){
-        this._posX = x;
-        this._posY = y;
+    setState(options) {
+        let nextState = cloneDeep(this.state);
+        Object.assign(nextState, options); 
+        this.state = nextState;
     }
 
-    getPosition(){
+    calculateNewRandomPosition(limitX, limitY){
+        let position = {};
+        position.posX = Math.floor(Math.random() * limitX);
+        position.posY = Math.floor(Math.random() * limitY);
+
+         log.info('New position: ', position);
+        return position;
+       
+    }
+
+    get position(){
         return ({
-            posX: this._posX,
-            posY: this._posY
+            X: this.state.posX,
+            Y: this.state.posY
         })
     }
 
-    getNourishment(){
-        return this._nourishment;
+    get nourishment(){
+        return this.state.nourishment;
     }
 }
