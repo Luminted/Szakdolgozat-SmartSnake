@@ -1,13 +1,15 @@
 "use strinct";
 
+import log from 'loglevel';
+
 function calculateStepCollisionType(snake, board){
-    const snakeDirection = snake.getDirection();
-    const velocity = snake.getVelocity();
+    const snakeDirection =  snake.direction;
+    const velocity = snake.velocity;
     const stepsTo = snake.calculateNextHead(velocity.X, velocity.Y);
 
     //TODO maybe board returns wall objects if position is out of bounds?
     if(stepsTo.posX < 0 || stepsTo.posY > board.getDimensions().dimX || stepsTo.posY < 0 ||stepsTo.X > board.getDimensions().dimY){
-        console.log(snake, board);
+        log.info(snake, board);
         return 'WALL_COLLISION';
     }
 

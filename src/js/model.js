@@ -1,97 +1,70 @@
 import Board from './board.js';
 import Snake from './snake.js';
 import Pill from './pill.js';
-import { calculateStepCollisionType } from './physics';
+import {
+    calculateStepCollisionType
+} from './physics';
 
+import log from 'loglevel';
 import cloneDeep from 'lodash/cloneDeep';
 
-const baseWidth = 30;
-const baseHeight = 30;
+export default class Model {
+    constructor() {
+        this.getEntityList = this.getEntityList.bind(this);
+        this.addEventListener = this.addEventListener.bind(this);
 
+        this.Entities = {};
+        this.callbacks = {
+            getEntityList: this.getEntityList
+        }
 
+        const _snake = new Snake(this.callbacks, 10);
+        const _board = new Board(this.callbacks);
+        const _pill = new Pill(this.callbacks);
 
-const _snake = new Snake(10);
-const _board = new Board();
-const _pill = new Pill();
-let tmpDirection = _snake.getDirection();
+        this.Entities.snake = _snake;
+        this.Entities.board = _board;
+        this.Entities.pill = _pill;
 
-function moveSnake() {
-    let nextDirection = _snake.handleInput(tmpDirection);
-    _snake.setDirection(nextDirection);
-    _snake.calculateVelocity();
-    const collision = calculateStepCollisionType(_snake, _board);
-    if (collision === 'WALL_COLLISION' || collision === 'BODY_COLLISION') {
-
-    } else if (collision === 'PILL_COLLISION') {
-        let nourishment = _pill.getNourishment();
-        _snake.eat(nourishment);
-        let dimensions = _board.getDimensions();
-        _pill.changePositionRandomly(dimensions.dimX, dimensions.dimY);
-        _snake.move();
-        putSnakeOnBoard(_snake, _board);
-    } else {
-        _snake.move();
-        putSnakeOnBoard(_snake, _board);
+        this.addEventListener();
     }
-    return collision;
-}
 
-function getBoardStatus() {
-    let tiles = [];
-    for (let i = 0; i < 30; ++i) {
-        for (let j = 0; j < 30; ++j) {
-            tiles.push(_board.getTileByPosition(i, j));
+    update() {
+        for (let entity in this.Entities) {
+            this.Entities[entity].update();
         }
     }
-    return tiles;
-}
-
-function putPillOnBoard() {
-    let position = _pill.getPosition();
-    _board.getTileByPosition(position.posX, position.posY).status = 'PILL';
-}
 
 
-function putSnakeOnBoard(snake, board) {
-    const snakeBody = snake.getBody();
-    //TODO: This is not a nice way to do this. Deepcopy a reference to the board instead
-    for (let i = 0; i < 30; ++i) {
-        for (let j = 0; j < 30; ++j) {
-            board.getTileByPosition(i, j).status = 'EMPTY';
-        }
+    //***************************************************************** CALLBACCKS *******************************************************************************//
+
+    getEntityList() {
+        return this.Entities;
     }
-    for (let part of snakeBody) {
-        let bodyPosX = part.posX;
-        let bodyPosY = part.posY;
-        let correspondingTile = board.getTileByPosition(bodyPosX, bodyPosY);
-        correspondingTile.status = 'SNAKE';
-    }
-}
 
-document.addEventListener('keydown', function (event) {
-    switch (event.key) {
-        case 'ArrowLeft':
-            event.preventDefault();
-            tmpDirection = _snake.handleInput('LEFT');
-            break;
-        case 'ArrowUp':
-            event.preventDefault();
-            tmpDirection = _snake.handleInput('UP');
-            break;
-        case 'ArrowRight':
-            event.preventDefault();
-            tmpDirection = _snake.handleInput('RIGHT');
-            break;
-        case 'ArrowDown':
-            event.preventDefault();
-            tmpDirection = _snake.handleInput('DOWN');
-            break;
+    addEventListener() {
+        let snake = this.Entities.snake;
+        document.addEventListener('keydown', function (event) {
+            switch (event.key) {
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    snake.handleInput('LEFT');
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    snake.handleInput('UP');
+                    break;
+                case 'ArrowRight':
+                    event.preventDefault();
+                    snake.handleInput('RIGHT');
+                    break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    snake.handleInput('DOWN');          
+                    break;
+            }
+            log.info(snake.state.direction);
+        }, false);
     }
-    console.log(_snake._direction);
-}, false)
 
-export {
-    moveSnake,
-    getBoardStatus,
-    putPillOnBoard,
 }

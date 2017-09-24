@@ -1,12 +1,9 @@
 "use strict"
 
+import log from 'loglevel';
 import Mainloop from 'mainloop.js';
 import CanvasWrapper from './canvasWrapper';
-import {
-    moveSnake,
-    getBoardStatus,
-    putPillOnBoard,
-} from './model';
+import Model from './model';
 
 let viewPort
 let viewPortWrapperElement
@@ -14,20 +11,14 @@ let canvas
 
 
 initViewPort();
-
+const model = new Model();
 
 //Játékloop
-Mainloop.setMaxAllowedFPS(20).setBegin(() => { }).setUpdate(() => { }).setDraw(() => {
+Mainloop.setMaxAllowedFPS(1).setBegin(() => { }).setUpdate(() => { }).setDraw(() => {
 
 }).setEnd(() => {
-    let collision = moveSnake();
-    putPillOnBoard();
-    console.log(collision);
-    if (collision === 'WALL_COLLISION') {
-        console.log('GAME OVER')
-    }
-    putPillOnBoard();
-    let tiles = getBoardStatus();
+    model.update();
+    let tiles = model.getEntityList().board.getTilesAsArray();
     drawTiles(tiles);
     canvas.renderScene();
     canvas.clearScene();
@@ -52,7 +43,7 @@ function drawTiles(tiles) {
  * Játék ablakának inicializálása
  */
 function initViewPort(hoistOn = 'viewport-container', viewPortX = 500, viewPortY = 500) {
-    console.info('Initiating Viewport');
+    log.info('Initiating Viewport');
     viewPort = document.createElement('canvas');
     viewPort.id = 'viewPort';
     viewPort.innerHTML = 'No canvas support :(';
@@ -70,5 +61,5 @@ function initViewPort(hoistOn = 'viewport-container', viewPortX = 500, viewPortY
     document.getElementById(hoistOn).appendChild(viewPortWrapperElement);
     canvas = new CanvasWrapper(500, 500, 'viewPort', '2d');
 
-    console.info('Viewport initiated');
+    log.info('Viewport initiated');
 }
