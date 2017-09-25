@@ -1,31 +1,61 @@
 "use strinct";
 
 import log from 'loglevel';
+import Subject from './AbstractClasses/Subject'
 
-function calculateStepCollisionType(snake, board){
-    const snakeDirection =  snake.direction;
-    const velocity = snake.velocity;
-    const stepsTo = snake.calculateNextHead(velocity.X, velocity.Y);
+export default class Physics extends Subject {
 
-    //TODO maybe board returns wall objects if position is out of bounds?
-    if(stepsTo.posX < 0 || stepsTo.posY > board.getDimensions().dimX || stepsTo.posY < 0 ||stepsTo.X > board.getDimensions().dimY){
-        log.info(snake, board);
-        return 'WALL_COLLISION';
+    constructor(callbacks) {
+        super();
+
+        this.observers = [];
+        this.callbacks = callbacks;
     }
 
-    if(board.getTileByPosition(stepsTo.posX, stepsTo.posY).status === 'PILL'){
-        return 'PILL_COLLISION';
+    update(){
+        this.calculateStepCollisionType();
     }
 
-    for(let node of snake.getBody()){
-        if(stepsTo.posX === node.posX && stepsTo.posY === node.posY){
-            return 'BODY_COLLISION';
+    calculateStepCollisionType() {
+        const snake = this.callbacks.getEntityList().snake;
+        const board = this.callbacks.getEntityList().board;
+        const snakeDirection = snake.direction;
+        const velocity = snake.velocity;
+        const stepsTo = snake.calculateNextHead(velocity.X, velocity.Y);
+
+        //TODO maybe board returns wall objects if position is out of bounds?
+        if (stepsTo.posX < 0 || stepsTo.posY > board.state.width || stepsTo.posY < 0 || stepsTo.X > board.state.length) {
+            for (let observer of this.observers) {
+                observer.onNotify(undefined, {
+                    message: "HELLO!"
+                })
+            }
+        }
+
+        if (board.getTileByPosition(stepsTo.posX, stepsTo.posY).status === 'PILL') {
+            for (let observer of this.observers) {
+                observer.onNotify(undefined, {
+                    message: "OLLEH!"
+                })
+            }
+        }
+
+        for (let node of snake.state.body) {
+            if (stepsTo.posX === node.posX && stepsTo.posY === node.posY) {
+                for (let observer of this.observers) {
+                    observer.onNotify(undefined, {
+                        message: "WORLD!"
+                    })
+                }
+            }
         }
     }
 
-    return 'NO_COLLISION';
-}
+    addObserver(observer) {
+        this.observers.push(observer);
+    }
 
-export {
-    calculateStepCollisionType
+    removeObserver(observer) {
+
+    }
 }

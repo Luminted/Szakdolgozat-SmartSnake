@@ -1,9 +1,7 @@
 import Board from './board.js';
 import Snake from './snake.js';
 import Pill from './pill.js';
-import {
-    calculateStepCollisionType
-} from './physics';
+import Physics from './physics';
 
 import log from 'loglevel';
 import cloneDeep from 'lodash/cloneDeep';
@@ -21,6 +19,9 @@ export default class Model {
         const _snake = new Snake(this.callbacks, 10);
         const _board = new Board(this.callbacks);
         const _pill = new Pill(this.callbacks);
+        this._physics = new Physics(this.callbacks);
+
+        this._physics.addObserver(_snake);
 
         this.Entities.snake = _snake;
         this.Entities.board = _board;
@@ -30,6 +31,7 @@ export default class Model {
     }
 
     update() {
+        this._physics.update();
         for (let entity in this.Entities) {
             this.Entities[entity].update();
         }
