@@ -1,10 +1,10 @@
 "use strict"
 
-import Entity from './AbstractClasses/Entity';
+import ObserverEntity from './AbstractClasses/ObserverEntity';
 import cloneDeep from 'lodash/cloneDeep';
 import log from 'loglevel';
 
-export default class Snake extends Entity {
+export default class Snake extends ObserverEntity {
     constructor(callbacks, baseLength = 3, startX = 0, startY = 0, startDirection = 'RIGHT', velocity = 1) {
         log.info('Initializing Snake...');
 
@@ -40,14 +40,18 @@ export default class Snake extends Entity {
         let nextBody = this.move(nextVelocity);
 
         nextState.body = nextBody;
-        nextState.velocityX = nextVelocity.X;
-        nextState.velocityY = nextVelocity.Y;
+        nextState._velocityX = nextVelocity.X;
+        nextState._velocityY = nextVelocity.Y;
 
         log.info('Snake');
         log.info('Prev state', this.state);
         log.info('Next state', nextState);
 
         this.setState(nextState);
+    }
+
+    onNotify(entity, event){
+        log.info(event.message);
     }
 
     setState(options) {
@@ -120,6 +124,10 @@ export default class Snake extends Entity {
 
     get head() {
         return this.body[0];
+    }
+
+    get direction(){
+        return this.state.direction;
     }
 
     eat(nourishment) {
