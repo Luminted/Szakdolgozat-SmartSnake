@@ -18,45 +18,68 @@ export default class Snake extends ObserverEntity {
         this.state._velocity = velocity;
         this.state._velocityY = 0;
         this.state._velocityX = 0;
+        this.state.status = "ALIVE";
 
         for (let i = 0; i < this.state.length; ++i) {
             this.state.body[i] = {
                 posX: startX,
-                posY: startY,
+                posY: startY
             }
         }
+
+        this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
 
         log.info('Snake initialized ', this.state);
     }
 
     update() {
-        let nextState = cloneDeep(this.state);
+        if (this.state.status === 'ALIVE') {
+            let nextState = cloneDeep(this.state);
 
-        if(!this.isOppositeDirection(this.state._tmpDirection)){
-            nextState.direction = this.state._tmpDirection;
+            if (!this.isOppositeDirection(this.state._tmpDirection)) {
+                nextState.direction = this.state._tmpDirection;
+            }
+
+            let nextVelocity = this.calculateVelocity(nextState.direction);
+            let nextBody = this.move(nextVelocity);
+
+            nextState.body = nextBody;
+            nextState._velocityX = nextVelocity.posX;
+            nextState._velocityY = nextVelocity.posY;
+
+            this.setState(nextState);
         }
-
-        let nextVelocity = this.calculateVelocity(nextState.direction);
-        let nextBody = this.move(nextVelocity);
-
-        nextState.body = nextBody;
-        nextState._velocityX = nextVelocity.X;
-        nextState._velocityY = nextVelocity.Y;
-
-        log.info('Snake');
-        log.info('Prev state', this.state);
-        log.info('Next state', nextState);
-
-        this.setState(nextState);
+        if (this.state.status === 'DEAD') {
+            log.info('SNAKE IS DEAD');
+        }
     }
 
-    onNotify(entity, event){
-        log.info(event.message);
+    onNotify(entity, event) {
+        switch (event.type) {
+            case ('PILL_COLLISION'):
+                this.eat(event.nourishment);
+                break;
+            case ('WALL_COLLISION'):
+                this.setState({
+                    status: 'DEAD'
+                });
+                break;
+            case ('BODY_COLLISION'):
+                this.setState({
+                    status: 'DEAD'
+                })
+                break;
+        }
     }
 
     setState(options) {
         let nextState = cloneDeep(this.state);
         Object.assign(nextState, options);
+
+        log.info('Snake');
+        log.info('Prev state', this.state);
+        log.info('Next state', nextState);
+
         this.state = nextState;
     }
 
