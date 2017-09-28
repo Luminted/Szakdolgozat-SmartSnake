@@ -3,7 +3,7 @@ export default class Subject {
         if (new.target === Subject) {
             throw new Error("Abstract class. Cannot be instantiated!");
         }
-        if (this.addObserver === void 0 || typeof this.addObserver !== "function") {
+        if (this.subscibe === void 0 || typeof this.subscibe !== "function") {
             throw new Error("Abstract method 'addObserver' must be overriden!");
         }
 
