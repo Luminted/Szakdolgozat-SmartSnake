@@ -9,39 +9,55 @@ import cloneDeep from 'lodash/cloneDeep';
 export default class Model {
     constructor() {
         this.getEntityList = this.getEntityList.bind(this);
+        this.getSubjectSubscribeFunctions = this.getSubjectSubscribeFunctions.bind(this);
         this.addEventListener = this.addEventListener.bind(this);
+        this.update = this.update.bind(this);
 
         this.Entities = {};
+        this.Subjects = {}
         this.callbacks = {
-            getEntityList: this.getEntityList
+            getEntityList: this.getEntityList,
+            getSubjectSubscribeFunctions: this.getSubjectSubscribeFunctions
         }
 
-        const _snake = new Snake(this.callbacks, 10);
-        const _board = new Board(this.callbacks);
-        const _pill = new Pill(this.callbacks);
         this._physics = new Physics(this.callbacks);
+        this.Subjects.physics = this._physics;
 
-        this._physics.addObserver(_snake);
+        //TODO: Do something about initializatuion prevedence
 
-        this.Entities.snake = _snake;
+        const _board = new Board(this.callbacks);
         this.Entities.board = _board;
+        const _snake = new Snake(this.callbacks, 1);
+        this.Entities.snake = _snake;
+        const _pill = new Pill(this.callbacks);
         this.Entities.pill = _pill;
 
         this.addEventListener();
     }
 
     update() {
-        this._physics.update();
         for (let entity in this.Entities) {
             this.Entities[entity].update();
         }
+
+        this._physics.update();
     }
 
 
-    //***************************************************************** CALLBACCKS *******************************************************************************//
+    //*************************************************** CALLBACCKS *******************************************************************************//
 
     getEntityList() {
         return this.Entities;
+    }
+
+    getSubjectSubscribeFunctions(){
+        let callbacks = {};
+        for(let subject in this.Subjects){
+            callbacks[subject] = {};
+            callbacks[subject].subscribe = this.Subjects[subject].subscibe;
+            console.log()
+        }
+        return callbacks;
     }
 
     addEventListener() {
