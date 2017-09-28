@@ -24,10 +24,9 @@ export default class Physics extends Subject {
         const pill = this.callbacks.getEntityList().pill;
         const snakeDirection = snake.direction;
         const velocity = snake.velocity;
-        const stepsTo = snake.calculateNextHead(velocity.posX, velocity.posY);
 
         //TODO maybe board returns wall objects if position is out of bounds?
-        if (stepsTo.posX < 0 || stepsTo.posY > board.state.width || stepsTo.posY < 0 || stepsTo.posX > board.state.length) {
+        if (snake.head.posX < 0 || snake.head.posY > board.state.width || snake.head.posY < 0 || snake.head.posX > board.state.length) {
             log.info('<---------------WALL_COLLISION_ACITON--------------->');
             for (let observer of this.observers) {
                 observer.onNotify(undefined, {
@@ -36,7 +35,7 @@ export default class Physics extends Subject {
             }
         }
 
-        if (pill.position.posX === stepsTo.posX && pill.position.posY === stepsTo.posY) {
+        if (pill.position.posX === snake.head.posX && pill.position.posY === snake.head.posY) {
             log.info('<---------------PILL_COLLISION_ACITON--------------->');
             for (let observer of this.observers) {
                 observer.onNotify(pill, {
@@ -47,7 +46,7 @@ export default class Physics extends Subject {
         }
 
         for (let node of snake.state.body) {
-            if (stepsTo.posX === node.posX && stepsTo.posY === node.posY) {
+            if (snake.head.posX === node.posX && snake.head.posY === node.posY) {
                 log.info('<---------------BODY_COLLISION_ACITON--------------->');
                 for (let observer of this.observers) {
                     observer.onNotify(node, {
