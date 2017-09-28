@@ -41,13 +41,9 @@ export default class Board extends Entity {
         }
 
         let pillPosition = this.callbacks.getEntityList().pill.position;
-        let nextTile = nextState.board[pillPosition.X][pillPosition.Y];
+        let nextTile = nextState.board[pillPosition.posX][pillPosition.posY];
         nextTile.status = 'PILL';
-        nextState.board[pillPosition.X][pillPosition.Y] = nextTile;
-
-        log.info('BOARD');
-        log.info('prevState', this.state);
-        log.info('next state', nextState);
+        nextState.board[pillPosition.posX][pillPosition.posY] = nextTile;
 
         this.state = nextState;
 
@@ -56,6 +52,11 @@ export default class Board extends Entity {
     setState(options) {
         let nextState = cloneDeep(this.state);
         Object.assign(nextState, options);
+
+        log.info('BOARD');
+        log.info('prevState', this.state);
+        log.info('next state', nextState);
+
         this.state = nextState;
     }
 
