@@ -74,7 +74,7 @@ export default class Snake extends ObserverEntity {
         let nextBody = cloneDeep(this.body);
 
         nextBody.pop();
-        nextBody.unshift(this.calculateNextHead(velocity.X, velocity.Y));
+        nextBody.unshift(this.calculateNextHead(velocity.posX, velocity.posY));
 
         return nextBody;
     }
@@ -83,20 +83,20 @@ export default class Snake extends ObserverEntity {
         let nextVelocity = {};
         switch (direction) {
             case 'RIGHT':
-                nextVelocity.X = this.state._velocity;
-                nextVelocity.Y = 0;
+                nextVelocity.posX = this.state._velocity;
+                nextVelocity.posY = 0;
                 break;
             case 'LEFT':
-                nextVelocity.X = -this.state._velocity;
-                nextVelocity.Y = 0;
+                nextVelocity.posX = -this.state._velocity;
+                nextVelocity.posY = 0;
                 break;
             case 'DOWN':
-                nextVelocity.X = 0;
-                nextVelocity.Y = this.state._velocity;
+                nextVelocity.posX = 0;
+                nextVelocity.posY = this.state._velocity;
                 break;
             case 'UP':
-                nextVelocity.X = 0;
-                nextVelocity.Y = -this.state._velocity;
+                nextVelocity.posX = 0;
+                nextVelocity.posY = -this.state._velocity;
                 break;
         };
         return nextVelocity;
@@ -117,8 +117,8 @@ export default class Snake extends ObserverEntity {
 
     get velocity() {
         return {
-            X: this.state._velocityX,
-            Y: this.state._velocityY
+            posX: this.state._velocityX,
+            posY: this.state._velocityY
         }
     }
 
@@ -126,7 +126,7 @@ export default class Snake extends ObserverEntity {
         return this.body[0];
     }
 
-    get direction(){
+    get direction() {
         return this.state.direction;
     }
 
