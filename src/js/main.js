@@ -14,7 +14,7 @@ initViewPort();
 const model = new Model();
 
 //Játékloop
-Mainloop.setMaxAllowedFPS(1).setBegin(() => { }).setUpdate(() => { }).setDraw(() => {
+Mainloop.setMaxAllowedFPS(10).setBegin(() => { }).setUpdate(() => { }).setDraw(() => {
 
 }).setEnd(() => {
     model.update();
