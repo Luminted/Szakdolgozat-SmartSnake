@@ -1,10 +1,10 @@
 "use strict"
 
-import Entity from './AbstractClasses/Entity';
+import ObserverEntity from './AbstractClasses/ObserverEntity';
 import cloneDeep from 'lodash/cloneDeep';
 import log from 'loglevel';
 
-export default class Snake extends Entity {
+export default class Snake extends ObserverEntity {
     constructor(callbacks, baseLength = 3, startX = 0, startY = 0, startDirection = 'RIGHT', velocity = 1) {
         log.info('Initializing Snake...');
 
@@ -18,41 +18,68 @@ export default class Snake extends Entity {
         this.state._velocity = velocity;
         this.state._velocityY = 0;
         this.state._velocityX = 0;
+        this.state.status = "ALIVE";
 
         for (let i = 0; i < this.state.length; ++i) {
             this.state.body[i] = {
                 posX: startX,
-                posY: startY,
+                posY: startY
             }
         }
+
+        this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
 
         log.info('Snake initialized ', this.state);
     }
 
     update() {
-        let nextState = cloneDeep(this.state);
+        if (this.state.status === 'ALIVE') {
+            let nextState = cloneDeep(this.state);
 
-        if(!this.isOppositeDirection(this.state._tmpDirection)){
-            nextState.direction = this.state._tmpDirection;
+            if (!this.isOppositeDirection(this.state._tmpDirection)) {
+                nextState.direction = this.state._tmpDirection;
+            }
+
+            let nextVelocity = this.calculateVelocity(nextState.direction);
+            let nextBody = this.move(nextVelocity);
+
+            nextState.body = nextBody;
+            nextState._velocityX = nextVelocity.posX;
+            nextState._velocityY = nextVelocity.posY;
+
+            this.setState(nextState);
         }
+        if (this.state.status === 'DEAD') {
+            log.info('SNAKE IS DEAD');
+        }
+    }
 
-        let nextVelocity = this.calculateVelocity(nextState.direction);
-        let nextBody = this.move(nextVelocity);
-
-        nextState.body = nextBody;
-        nextState.velocityX = nextVelocity.X;
-        nextState.velocityY = nextVelocity.Y;
-
-        log.info('Snake');
-        log.info('Prev state', this.state);
-        log.info('Next state', nextState);
-
-        this.setState(nextState);
+    onNotify(entity, event) {
+        switch (event.type) {
+            case ('PILL_COLLISION'):
+                this.eat(event.nourishment);
+                break;
+            case ('WALL_COLLISION'):
+                this.setState({
+                    status: 'DEAD'
+                });
+                break;
+            case ('BODY_COLLISION'):
+                this.setState({
+                    status: 'DEAD'
+                })
+                break;
+        }
     }
 
     setState(options) {
         let nextState = cloneDeep(this.state);
         Object.assign(nextState, options);
+
+        log.info('Snake');
+        log.info('Prev state', this.state);
+        log.info('Next state', nextState);
+
         this.state = nextState;
     }
 
@@ -70,7 +97,7 @@ export default class Snake extends Entity {
         let nextBody = cloneDeep(this.body);
 
         nextBody.pop();
-        nextBody.unshift(this.calculateNextHead(velocity.X, velocity.Y));
+        nextBody.unshift(this.calculateNextHead(velocity.posX, velocity.posY));
 
         return nextBody;
     }
@@ -79,20 +106,20 @@ export default class Snake extends Entity {
         let nextVelocity = {};
         switch (direction) {
             case 'RIGHT':
-                nextVelocity.X = this.state._velocity;
-                nextVelocity.Y = 0;
+                nextVelocity.posX = this.state._velocity;
+                nextVelocity.posY = 0;
                 break;
             case 'LEFT':
-                nextVelocity.X = -this.state._velocity;
-                nextVelocity.Y = 0;
+                nextVelocity.posX = -this.state._velocity;
+                nextVelocity.posY = 0;
                 break;
             case 'DOWN':
-                nextVelocity.X = 0;
-                nextVelocity.Y = this.state._velocity;
+                nextVelocity.posX = 0;
+                nextVelocity.posY = this.state._velocity;
                 break;
             case 'UP':
-                nextVelocity.X = 0;
-                nextVelocity.Y = -this.state._velocity;
+                nextVelocity.posX = 0;
+                nextVelocity.posY = -this.state._velocity;
                 break;
         };
         return nextVelocity;
@@ -113,13 +140,17 @@ export default class Snake extends Entity {
 
     get velocity() {
         return {
-            X: this.state._velocityX,
-            Y: this.state._velocityY
+            posX: this.state._velocityX,
+            posY: this.state._velocityY
         }
     }
 
     get head() {
         return this.body[0];
+    }
+
+    get direction() {
+        return this.state.direction;
     }
 
     eat(nourishment) {

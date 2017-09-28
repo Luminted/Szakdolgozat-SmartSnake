@@ -1,9 +1,7 @@
 import Board from './board.js';
 import Snake from './snake.js';
 import Pill from './pill.js';
-import {
-    calculateStepCollisionType
-} from './physics';
+import Physics from './physics';
 
 import log from 'loglevel';
 import cloneDeep from 'lodash/cloneDeep';
@@ -11,19 +9,27 @@ import cloneDeep from 'lodash/cloneDeep';
 export default class Model {
     constructor() {
         this.getEntityList = this.getEntityList.bind(this);
+        this.getSubjectSubscribeFunctions = this.getSubjectSubscribeFunctions.bind(this);
         this.addEventListener = this.addEventListener.bind(this);
+        this.update = this.update.bind(this);
 
         this.Entities = {};
+        this.Subjects = {}
         this.callbacks = {
-            getEntityList: this.getEntityList
+            getEntityList: this.getEntityList,
+            getSubjectSubscribeFunctions: this.getSubjectSubscribeFunctions
         }
 
-        const _snake = new Snake(this.callbacks, 10);
-        const _board = new Board(this.callbacks);
-        const _pill = new Pill(this.callbacks);
+        this._physics = new Physics(this.callbacks);
+        this.Subjects.physics = this._physics;
 
-        this.Entities.snake = _snake;
+        //TODO: Do something about initializatuion prevedence
+
+        const _board = new Board(this.callbacks);
         this.Entities.board = _board;
+        const _snake = new Snake(this.callbacks, 1);
+        this.Entities.snake = _snake;
+        const _pill = new Pill(this.callbacks);
         this.Entities.pill = _pill;
 
         this.addEventListener();
@@ -33,13 +39,25 @@ export default class Model {
         for (let entity in this.Entities) {
             this.Entities[entity].update();
         }
+
+        this._physics.update();
     }
 
 
-    //***************************************************************** CALLBACCKS *******************************************************************************//
+    //*************************************************** CALLBACCKS *******************************************************************************//
 
     getEntityList() {
         return this.Entities;
+    }
+
+    getSubjectSubscribeFunctions(){
+        let callbacks = {};
+        for(let subject in this.Subjects){
+            callbacks[subject] = {};
+            callbacks[subject].subscribe = this.Subjects[subject].subscibe;
+            console.log()
+        }
+        return callbacks;
     }
 
     addEventListener() {

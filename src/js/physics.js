@@ -1,31 +1,67 @@
 "use strinct";
 
 import log from 'loglevel';
+import Subject from './AbstractClasses/Subject'
 
-function calculateStepCollisionType(snake, board){
-    const snakeDirection =  snake.direction;
-    const velocity = snake.velocity;
-    const stepsTo = snake.calculateNextHead(velocity.X, velocity.Y);
+export default class Physics extends Subject {
 
-    //TODO maybe board returns wall objects if position is out of bounds?
-    if(stepsTo.posX < 0 || stepsTo.posY > board.getDimensions().dimX || stepsTo.posY < 0 ||stepsTo.X > board.getDimensions().dimY){
-        log.info(snake, board);
-        return 'WALL_COLLISION';
+    constructor(callbacks) {
+        super();
+
+        this.observers = [];
+        this.callbacks = callbacks;
+
+        this.subscibe = this.subscibe.bind(this);
     }
 
-    if(board.getTileByPosition(stepsTo.posX, stepsTo.posY).status === 'PILL'){
-        return 'PILL_COLLISION';
+    update() {
+        this.calculateStepCollisionType();
     }
 
-    for(let node of snake.getBody()){
-        if(stepsTo.posX === node.posX && stepsTo.posY === node.posY){
-            return 'BODY_COLLISION';
+    calculateStepCollisionType() {
+        const snake = this.callbacks.getEntityList().snake;
+        const board = this.callbacks.getEntityList().board;
+        const pill = this.callbacks.getEntityList().pill;
+        const snakeDirection = snake.direction;
+        const velocity = snake.velocity;
+
+        //TODO maybe board returns wall objects if position is out of bounds?
+        if (snake.head.posX < 0 || snake.head.posY > board.state.width || snake.head.posY < 0 || snake.head.posX > board.state.length) {
+            log.info('<---------------WALL_COLLISION_ACITON--------------->');
+            for (let observer of this.observers) {
+                observer.onNotify(undefined, {
+                    type: "WALL_COLLISION"
+                });
+            }
+        }
+
+        if (pill.position.posX === snake.head.posX && pill.position.posY === snake.head.posY) {
+            log.info('<---------------PILL_COLLISION_ACITON--------------->');
+            for (let observer of this.observers) {
+                observer.onNotify(pill, {
+                    type: 'PILL_COLLISION',
+                    nourishment: this.callbacks.getEntityList().pill.nourishment
+                });
+            }
+        }
+
+        for (let node of snake.state.body) {
+            if (snake.head.posX === node.posX && snake.head.posY === node.posY) {
+                log.info('<---------------BODY_COLLISION_ACITON--------------->');
+                for (let observer of this.observers) {
+                    observer.onNotify(node, {
+                        type: 'BODY_COLLISION_ACTION'
+                    });
+                }
+            }
         }
     }
 
-    return 'NO_COLLISION';
-}
+    subscibe(observer) {
+        this.observers.push(observer);
+    }
 
-export {
-    calculateStepCollisionType
+    removeObserver(observer) {
+
+    }
 }
