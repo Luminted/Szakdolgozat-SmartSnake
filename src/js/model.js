@@ -27,7 +27,7 @@ export default class Model {
 
         const _board = new Board(this.callbacks);
         this.Entities.board = _board;
-        const _snake = new Snake(this.callbacks, 1);
+        const _snake = new Snake(this.callbacks, 30);
         this.Entities.snake = _snake;
         const _pill = new Pill(this.callbacks);
         this.Entities.pill = _pill;
