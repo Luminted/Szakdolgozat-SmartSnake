@@ -1,5 +1,6 @@
 var path = require('path');
 var webpack = require('webpack');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 
 module.exports = {
@@ -27,6 +28,10 @@ module.exports = {
     }],
   },
   plugins: [
+    new HtmlWebpackPlugin({
+            title: 'Snake.io',
+            template: 'src/dist/index.html',
+            favicon: 'src/distfavicon.ico'}),
     new webpack.optimize.ModuleConcatenationPlugin()
   ]
 };
