@@ -4,7 +4,6 @@ import Pill from './pill.js';
 import Physics from './physics';
 
 import log from 'loglevel';
-import cloneDeep from 'lodash/cloneDeep';
 
 export default class Model {
     constructor() {
@@ -12,6 +11,7 @@ export default class Model {
         this.getSubjectSubscribeFunctions = this.getSubjectSubscribeFunctions.bind(this);
         this.addEventListener = this.addEventListener.bind(this);
         this.update = this.update.bind(this);
+        this.reset = this.reset.bind(this);
 
         this.Entities = {};
         this.Subjects = {}
@@ -41,6 +41,13 @@ export default class Model {
         }
 
         this._physics.update();
+    }
+
+    reset(){
+        this.Entities.board.reset();
+        this.Entities.snake.reset();
+        this.Entities.pill.reset();
+        log.info('>>>>>>Game Reset<<<<<<')
     }
 
 

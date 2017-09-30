@@ -5,7 +5,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import log from 'loglevel';
 
 export default class Snake extends ObserverEntity {
-    constructor(callbacks, baseLength = 3, startX = 0, startY = 0, startDirection = 'RIGHT', velocity = 1) {
+    constructor(callbacks, baseLength = 3, startX = 0, startY = 0, startDirection = 'RIGHT', startVelocity = 1) {
         log.info('Initializing Snake...');
 
         super();
@@ -15,7 +15,7 @@ export default class Snake extends ObserverEntity {
         this.callbacks = callbacks;
         this.state._tmpDirection = startDirection;
         this.state.direction = startDirection;
-        this.state._velocity = velocity;
+        this.state._velocity = startVelocity;
         this.state._velocityY = 0;
         this.state._velocityX = 0;
         this.state.status = "ALIVE";
@@ -26,6 +26,15 @@ export default class Snake extends ObserverEntity {
                 posY: startY
             }
         }
+
+        this.state.startValues = {
+            baseLength,
+            startX,
+            startY,
+            startDirection,
+            startVelocity,
+            startBody: this.state.body
+        };
 
         this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
 
@@ -52,6 +61,29 @@ export default class Snake extends ObserverEntity {
         if (this.state.status === 'DEAD') {
             log.info('SNAKE IS DEAD');
         }
+    }
+
+    reset() {
+        let startValues = this.state.startValues;
+        let direction = startValues.startDirection;
+        let _velocity = startValues.startVelocity;
+        let _velocityY = 0;
+        let _velocityX = 0;
+        let body = startValues.startBody;
+        let length = startValues.baseLength;
+        let status = "ALIVE";
+
+        this.setState({
+            direction,
+            _velocity,
+            _velocityY,
+            _velocityX,
+            body,
+            length,
+            status,
+        });
+
+        log.info('<<<<Snake Reset>>>>');
     }
 
     onNotify(entity, event) {
@@ -121,7 +153,8 @@ export default class Snake extends ObserverEntity {
                 nextVelocity.posX = 0;
                 nextVelocity.posY = -this.state._velocity;
                 break;
-        };
+        }
+        ;
         return nextVelocity;
     }
 

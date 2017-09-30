@@ -25,13 +25,13 @@ export default class Board extends Entity {
                 })
             }
         }
-        this.state.initialBoard = cloneDeep(this.state.board);
+        this.initialBoard = cloneDeep(this.state.board);
         log.info('Board initialized', this.state);
     }
 
     update() {
         let nextState = cloneDeep(this.state);
-        nextState.board = cloneDeep(this.state.initialBoard);
+        nextState.board = cloneDeep(this.initialBoard);
 
         let snakeBody = this.callbacks.getEntityList().snake.body;
         for(let node of snakeBody){
@@ -47,6 +47,13 @@ export default class Board extends Entity {
 
         this.state = nextState;
 
+    }
+
+    reset(){
+        this.setState({
+            board: this.initialBoard
+        });
+        log.info('<<<<Board Reset>>>>');
     }
 
     setState(options) {

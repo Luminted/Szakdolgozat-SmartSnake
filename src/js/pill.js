@@ -24,7 +24,7 @@ export default class Pill extends ObserverEntity {
     }
 
     update() {
-        log.info('PILL')
+
     }
 
     setState(options) {
@@ -36,6 +36,17 @@ export default class Pill extends ObserverEntity {
         log.info('next state', nextState);
 
         this.state = nextState;
+    }
+
+    reset(){
+        let nextPosX = Math.floor(this.state.limitX / 2);
+        let nextPosY = Math.floor(this.state.limitY / 2);
+
+        this.setState({
+            nextPosX,
+            nextPosY
+        });
+        log.info('<<<<Pill Reset>>>>');
     }
 
     onNotify(entity, event) {

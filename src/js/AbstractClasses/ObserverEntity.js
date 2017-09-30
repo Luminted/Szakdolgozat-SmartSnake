@@ -11,5 +11,9 @@ export default class ObserverEntity {
         if (this.onNotify === void 0 || typeof this.onNotify !== "function") {
             throw new Error("Abstract method 'onNotify' must be overriden!");
         }
+
+        if(this.reset === void 0 || typeof this.reset !== 'function'){
+            throw new Error("Abstract method 'reset' must be overriden!");
+        }
     }
 };
