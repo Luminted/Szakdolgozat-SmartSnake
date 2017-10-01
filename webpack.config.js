@@ -1,7 +1,7 @@
 var path = require('path');
 var webpack = require('webpack');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var FaviconsWebpackPlugin = require('favicons-webpack-plugin');
+//var HtmlWebpackPlugin = require('html-webpack-plugin');
+//var FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 
 
 module.exports = {
@@ -29,7 +29,7 @@ module.exports = {
     }],
   },
   plugins: [
-    new FaviconsWebpackPlugin({
+/*    new FaviconsWebpackPlugin({
             // Your source logo
             logo: 'favicon.png',
             // The prefix for all image files (might be a folder or a name)
@@ -60,6 +60,7 @@ module.exports = {
             title: 'Snake.io',
             template: 'index.html',
         }),
+        */
         new webpack.optimize.ModuleConcatenationPlugin()
   ]
 };
