@@ -31,7 +31,7 @@ module.exports = {
   plugins: [
     new FaviconsWebpackPlugin({
             // Your source logo
-            logo: './src/dist/favicon.png',
+            logo: 'favicon.png',
             // The prefix for all image files (might be a folder or a name)
             prefix: 'icons-[hash]/',
             // The name of the json containing all favicon information
@@ -58,7 +58,7 @@ module.exports = {
         }),
         new HtmlWebpackPlugin({
             title: 'Snake.io',
-            template: 'src/dist/index.html',
+            template: 'index.html',
         }),
         new webpack.optimize.ModuleConcatenationPlugin()
   ]
