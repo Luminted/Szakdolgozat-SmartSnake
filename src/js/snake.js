@@ -13,6 +13,7 @@ export default class Snake extends ObserverEntity {
         this.state.length = baseLength;
         this.state.body = [];
         this.callbacks = callbacks;
+        this.command = void 0;
         this.state._tmpDirection = startDirection;
         this.state.direction = startDirection;
         this.state._velocity = velocity;
@@ -36,8 +37,14 @@ export default class Snake extends ObserverEntity {
         if (this.state.status === 'ALIVE') {
             let nextState = cloneDeep(this.state);
 
+            if(this.state.command){
+                this.state.command.execute(this);
+                nextState.command = void 0;
+            }
+
             if (!this.isOppositeDirection(this.state._tmpDirection)) {
                 nextState.direction = this.state._tmpDirection;
+                nextState._tmpDirection = this.state._tmpDirection;
             }
 
             let nextVelocity = this.calculateVelocity(nextState.direction);

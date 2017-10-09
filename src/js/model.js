@@ -3,11 +3,23 @@ import Snake from './snake.js';
 import Pill from './pill.js';
 import Physics from './physics';
 
+import LeftTurnCommand from './commands/LeftTurnCommand';
+import RightTurnCommand from './commands/RightTurnCommand';
+import DownTurnCommand from './commands/DownTurnCommand';
+import UpTurnCommand from './commands/UpTurnCommand';
+
 import log from 'loglevel';
 import cloneDeep from 'lodash/cloneDeep';
 
 export default class Model {
     constructor() {
+        this.Commands = {};
+
+        this.Commands.LeftTurn = new LeftTurnCommand();
+        this.Commands.RightTurn = new RightTurnCommand();
+        this.Commands.DownTurn = new DownTurnCommand();
+        this.Commands.UpTurn = new UpTurnCommand();
+
         this.getEntityList = this.getEntityList.bind(this);
         this.getSubjectSubscribeFunctions = this.getSubjectSubscribeFunctions.bind(this);
         this.addEventListener = this.addEventListener.bind(this);
@@ -25,13 +37,15 @@ export default class Model {
 
         //TODO: Do something about initializatuion prevedence
 
-        const _board = new Board(this.callbacks);
-        this.Entities.board = _board;
         const _snake = new Snake(this.callbacks, 30);
         this.Entities.snake = _snake;
+        const _board = new Board(this.callbacks);
+        this.Entities.board = _board;
         const _pill = new Pill(this.callbacks);
         this.Entities.pill = _pill;
+        
 
+        this.addEventListener = this.addEventListener.bind(this);
         this.addEventListener();
     }
 
@@ -61,24 +75,33 @@ export default class Model {
     }
 
     addEventListener() {
+        let commands = this.Commands;
         let snake = this.Entities.snake;
         document.addEventListener('keydown', function (event) {
             switch (event.key) {
                 case 'ArrowLeft':
                     event.preventDefault();
-                    snake.handleInput('LEFT');
+                    snake.setState({
+                        command: commands.LeftTurn
+                    })
                     break;
                 case 'ArrowUp':
                     event.preventDefault();
-                    snake.handleInput('UP');
+                    snake.setState({
+                        command: commands.UpTurn
+                    })
                     break;
                 case 'ArrowRight':
                     event.preventDefault();
-                    snake.handleInput('RIGHT');
+                    snake.setState({
+                        command: commands.RightTurn
+                    })
                     break;
                 case 'ArrowDown':
                     event.preventDefault();
-                    snake.handleInput('DOWN');          
+                    snake.setState({
+                        command: commands.DownTurn
+                    })          
                     break;
             }
             log.info(snake.state.direction);
