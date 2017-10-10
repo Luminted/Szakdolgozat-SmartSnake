@@ -24,25 +24,15 @@ Mainloop.setMaxAllowedFPS(10).setBegin(() => {}).setUpdate(() => {}).setDraw(() 
     canvas.clearScene();
 }).start();
 
-<<<<<<< Updated upstream
-let colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple']
-=======
 let colors = ['#E8E85C', '#DCB468', '#ECA880', '#ECA0A0', '#DC9CD0', '#C49CEC', '#A8A0EC', '#90B4EC', '#90CCE8', '#90E4C0', '#A4E4A4', '#A4E4A4', '#B4E490', '#B4E490', '#E8CC7C'];
->>>>>>> Stashed changes
 
 //TODO: This should be in a separate render module
 function drawTiles(tiles) {
     for (let i = 0; i < tiles.length; ++i) {
         if (tiles[i].status === 'SNAKE') {
-<<<<<<< Updated upstream
-            canvas.createRect(tiles[i].posX * 500 / 30, tiles[i].posY * 500 / 30, 500 / 30, 500 / 30, colors[i % 6]);
-        } else if (tiles[i].status === 'PILL') {
-            canvas.createCircle(tiles[i].posX * 500 / 30 + 500 / 60, tiles[i].posY * 500 / 30 + 500 / 60, 500 / 60, 'red');
-=======
             canvas.createRect(tiles[i].posX * 500 / 30, tiles[i].posY * 500 / 30, 500 / 30, 500 / 30, colors[i % colors.length]);
         } else if (tiles[i].status === 'PILL') {
             canvas.createRect(tiles[i].posX * 500 / 30, tiles[i].posY * 500 / 30, 500 / 30, 500 / 30, 'red');
->>>>>>> Stashed changes
         }
     }
 }
