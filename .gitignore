@@ -10,3 +10,4 @@ npm-debug.log
 .idea/modules.xml
 .idea/vcs.xml
 .idea/workspace.xml
+jsconfig.json
