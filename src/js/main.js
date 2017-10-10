@@ -32,7 +32,7 @@ function drawTiles(tiles) {
         if (tiles[i].status === 'SNAKE') {
             canvas.createRect(tiles[i].posX * 500 / 30, tiles[i].posY * 500 / 30, 500 / 30, 500 / 30, colors[i % colors.length]);
         } else if (tiles[i].status === 'PILL') {
-            canvas.createRect(tiles[i].posX * 500 / 30, tiles[i].posY * 500 / 30, 500 / 30, 500 / 30, 'red');
+            canvas.createCircle(tiles[i].posX * 500 / 30 + 500 / 60, tiles[i].posY * 500 / 30 + 500 / 60, 500 / 60, 'red');
         }
     }
 }
