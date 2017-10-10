@@ -44,6 +44,7 @@ export default class Snake extends ObserverEntity {
 
             if (!this.isOppositeDirection(this.state._tmpDirection)) {
                 nextState.direction = this.state._tmpDirection;
+                //TODO: This feels hacky. Look at is later!
                 nextState._tmpDirection = this.state._tmpDirection;
             }
 

@@ -14,7 +14,7 @@ initViewPort();
 const model = new Model();
 
 //Játékloop
-Mainloop.setMaxAllowedFPS(10).setBegin(() => { }).setUpdate(() => { }).setDraw(() => {
+Mainloop.setMaxAllowedFPS(10).setBegin(() => {}).setUpdate(() => {}).setDraw(() => {
 
 }).setEnd(() => {
     model.update();
@@ -24,13 +24,15 @@ Mainloop.setMaxAllowedFPS(10).setBegin(() => { }).setUpdate(() => { }).setDraw((
     canvas.clearScene();
 }).start();
 
+let colors = ['#E8E85C', '#ECA880', '#DCB468', '#ECA0A0', '#DC9CD0', '#C49CEC', '#A8A0EC', '#90B4EC', '#90CCE8', '#90E4C0', '#A4E4A4', '#A4E4A4', '#B4E490', '#B4E490', '#E8CC7C'];
+
 //TODO: This should be in a separate render module
 function drawTiles(tiles) {
-    for (let tile of tiles) {
-        if (tile.status === 'SNAKE') {
-            canvas.createRect(tile.posX * 500 / 30, tile.posY * 500 / 30, 500 / 30, 500 / 30);
-        } else if (tile.status === 'PILL') {
-            canvas.createRect(tile.posX * 500 / 30, tile.posY * 500 / 30, 500 / 30, 500 / 30, 'red');
+    for (let i = 0; i < tiles.length; ++i) {
+        if (tiles[i].status === 'SNAKE') {
+            canvas.createRect(tiles[i].posX * 500 / 30, tiles[i].posY * 500 / 30, 500 / 30, 500 / 30, colors[i % colors.length]);
+        } else if (tiles[i].status === 'PILL') {
+            canvas.createCircle(tiles[i].posX * 500 / 30 + 500 / 60, tiles[i].posY * 500 / 30 + 500 / 60, 500 / 60, 'red');
         }
     }
 }
