@@ -28,6 +28,7 @@ module.exports = {
         }],
     },
     plugins: [
+        /*
         new FaviconsWebpackPlugin({
             // Your source logo
             logo: './src/dist/favicon.png',
@@ -59,6 +60,7 @@ module.exports = {
             title: 'Snake.io',
             template: 'src/dist/index.html',
         }),
+        */
         new webpack.optimize.ModuleConcatenationPlugin(),
     ]
 };
