@@ -24,13 +24,15 @@ Mainloop.setMaxAllowedFPS(10).setBegin(() => { }).setUpdate(() => { }).setDraw((
     canvas.clearScene();
 }).start();
 
+let colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple']
+
 //TODO: This should be in a separate render module
 function drawTiles(tiles) {
-    for (let tile of tiles) {
-        if (tile.status === 'SNAKE') {
-            canvas.createRect(tile.posX * 500 / 30, tile.posY * 500 / 30, 500 / 30, 500 / 30);
-        } else if (tile.status === 'PILL') {
-            canvas.createRect(tile.posX * 500 / 30, tile.posY * 500 / 30, 500 / 30, 500 / 30, 'red');
+    for (let i = 0; i < tiles.length; ++i) {
+        if (tiles[i].status === 'SNAKE') {
+            canvas.createRect(tiles[i].posX * 500 / 30, tiles[i].posY * 500 / 30, 500 / 30, 500 / 30, colors[i % 6]);
+        } else if (tiles[i].status === 'PILL') {
+            canvas.createCircle(tiles[i].posX * 500 / 30 + 500 / 60, tiles[i].posY * 500 / 30 + 500 / 60, 500 / 60, 'red');
         }
     }
 }

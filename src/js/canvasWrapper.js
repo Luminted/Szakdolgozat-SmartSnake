@@ -41,6 +41,20 @@ export default class CanvasWrapper {
         return rect;
     }
 
+    createCircle(posX = 0, posY = 0, radius = 0, color = 'black') {
+        const circle = {
+            canvasObjectType: 'circle',
+            radius,
+            starAngle: 0,
+            endAndge: 2 * Math.PI,
+            posX,
+            posY,
+            color
+        };
+        this._scene.push(circle);
+        return circle;
+    }
+
     /**
      * Téglalap kirajzolása
      * @param {*téglalap reprezentáció} rect 
@@ -58,6 +72,22 @@ export default class CanvasWrapper {
         }
     }
 
+    drawCircle(circle){
+        if (typeof circle === 'object' && circle !== null) {
+            if (circle.canvasObjectType === 'circle') {
+                this._ctx.fillStyle = circle.color;
+                this._ctx.beginPath();
+                this._ctx.arc(circle.posX, circle.posY, circle.radius, circle.starAngle, circle.endAndge, false);
+                this._ctx.closePath();
+                this._ctx.fill();
+            } else {
+                console.error('Object given is not a circle: ', circle);
+            }
+        } else {
+            console.error('Given circle is not an objet or was null: ', circle);
+        }
+    }
+
     /**
      * Színtér kirajzolása
      */
@@ -69,7 +99,10 @@ export default class CanvasWrapper {
                     switch(object.canvasObjectType){
                       case 'rect':
                         this.drawRect(object);
-                      break;
+                        break;
+                      case 'circle':
+                        this.drawCircle(object);
+                        break;
                 }
             } else {
                 console.warn('Was not a canvasObject: ', object)
