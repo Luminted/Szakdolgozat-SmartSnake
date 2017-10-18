@@ -1,5 +1,7 @@
 var path = require('path');
 var webpack = require('webpack');
+//var HtmlWebpackPlugin = require('html-webpack-plugin');
+//var FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 
 
 module.exports = {
@@ -27,6 +29,38 @@ module.exports = {
     }],
   },
   plugins: [
-    new webpack.optimize.ModuleConcatenationPlugin()
+/*    new FaviconsWebpackPlugin({
+            // Your source logo
+            logo: 'favicon.png',
+            // The prefix for all image files (might be a folder or a name)
+            prefix: 'icons-[hash]/',
+            // The name of the json containing all favicon information
+            statsFilename: 'iconstats-[hash].json',
+            // Generate a cache file with control hashes and
+            // don't rebuild the favicons until those hashes change
+            persistentCache: true,
+            // Inject the html into the html-webpack-plugin
+            inject: true,
+
+            // which icons should be generated (see https://github.com/haydenbleasel/favicons#usage)
+            icons: {
+                android: true,
+                appleIcon: true,
+                appleStartup: true,
+                coast: false,
+                favicons: true,
+                firefox: true,
+                opengraph: false,
+                twitter: false,
+                yandex: false,
+                windows: false
+            }
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Snake.io',
+            template: 'index.html',
+        }),
+        */
+        new webpack.optimize.ModuleConcatenationPlugin()
   ]
 };
