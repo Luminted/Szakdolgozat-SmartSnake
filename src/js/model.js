@@ -57,7 +57,7 @@ export default class Model {
         this._physics.update();
     }
 
-    reset(){
+    reset() {
         this.Entities.board.reset();
         this.Entities.snake.reset();
         this.Entities.pill.reset();
@@ -71,9 +71,9 @@ export default class Model {
         return this.Entities;
     }
 
-    getSubjectSubscribeFunctions(){
+    getSubjectSubscribeFunctions() {
         let callbacks = {};
-        for(let subject in this.Subjects){
+        for (let subject in this.Subjects) {
             callbacks[subject] = {};
             callbacks[subject].subscribe = this.Subjects[subject].subscibe;
             console.log()
@@ -81,10 +81,13 @@ export default class Model {
         return callbacks;
     }
 
-    addEventListener() {
+    //************************************************EVENTLISTENERS****************************************************************************
+
+    //TODO Move this in a separate file
+    setupKeyboardCommands() {
         let commands = this.Commands;
         let snake = this.Entities.snake;
-        document.addEventListener('keydown', function (event) {
+        document.addEventListener('keydown',  (event) => {
             switch (event.key) {
                 case 'ArrowLeft':
                     event.preventDefault();
@@ -108,10 +111,13 @@ export default class Model {
                     event.preventDefault();
                     snake.setState({
                         command: commands.DownTurn
-                    })          
+                    })
+                    break;
+                case 'r':
+                    event.preventDefault();
+                    this.reset();
                     break;
             }
-            log.info(snake.state.direction);
         }, false);
     }
 
