@@ -14,7 +14,7 @@ export default class Snake extends ObserverEntity {
         this.state.body = [];
         this.callbacks = callbacks;
         this.command = void 0;
-        this.state._tmpDirection = startDirection;
+        this.state._tmpDirection = void 0;
         this.state.direction = startDirection;
         this.state._velocity = startVelocity;
         this.state._velocityY = 0;
@@ -51,10 +51,10 @@ export default class Snake extends ObserverEntity {
                 nextState.command = void 0;
             }
 
-            if (!this.isOppositeDirection(this.state._tmpDirection)) {
+            if (this.state._tmpDirection && !this.isOppositeDirection(this.state._tmpDirection)) {
                 nextState.direction = this.state._tmpDirection;
                 //TODO: This feels hacky. Look at is later!
-                nextState._tmpDirection = this.state._tmpDirection;
+                nextState._tmpDirection = void 0;
             }
 
             let nextVelocity = this.calculateVelocity(nextState.direction);
@@ -107,7 +107,7 @@ export default class Snake extends ObserverEntity {
             case ('BODY_COLLISION'):
                 this.setState({
                     status: 'DEAD'
-                })
+                });
                 break;
         }
     }
@@ -144,6 +144,7 @@ export default class Snake extends ObserverEntity {
 
     calculateVelocity(direction) {
         let nextVelocity = {};
+        //TODO rename pos to vel
         switch (direction) {
             case 'RIGHT':
                 nextVelocity.posX = this.state._velocity;
@@ -180,10 +181,7 @@ export default class Snake extends ObserverEntity {
     }
 
     get velocity() {
-        return {
-            posX: this.state._velocityX,
-            posY: this.state._velocityY
-        }
+        return this.state._velocity;
     }
 
     get head() {

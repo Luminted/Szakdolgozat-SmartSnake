@@ -3,10 +3,10 @@ import Snake from './snake.js';
 import Pill from './pill.js';
 import Physics from './physics';
 
-import LeftTurnCommand from './commands/LeftTurnCommand';
-import RightTurnCommand from './commands/RightTurnCommand';
-import DownTurnCommand from './commands/DownTurnCommand';
-import UpTurnCommand from './commands/UpTurnCommand';
+import LeftTurnCommand from './Commands/LeftTurnCommand';
+import RightTurnCommand from './Commands/RightTurnCommand';
+import DownTurnCommand from './Commands/DownTurnCommand';
+import UpTurnCommand from './Commands/UpTurnCommand';
 
 import log from 'loglevel';
 
@@ -21,7 +21,7 @@ export default class Model {
 
         this.getEntityList = this.getEntityList.bind(this);
         this.getSubjectSubscribeFunctions = this.getSubjectSubscribeFunctions.bind(this);
-        this.addEventListener = this.addEventListener.bind(this);
+        this.addEventListener = this.setupKeyboardCommands.bind(this);
         this.update = this.update.bind(this);
         this.reset = this.reset.bind(this);
 
@@ -37,16 +37,16 @@ export default class Model {
 
         //TODO: Do something about initializatuion prevedence
 
-        const _snake = new Snake(this.callbacks, 30);
+        const _snake = new Snake(this.callbacks, 3);
         this.Entities.snake = _snake;
         const _board = new Board(this.callbacks);
         this.Entities.board = _board;
         const _pill = new Pill(this.callbacks);
         this.Entities.pill = _pill;
-        
 
-        this.addEventListener = this.addEventListener.bind(this);
-        this.addEventListener();
+
+        this.addEventListener = this.setupKeyboardCommands.bind(this);
+        this.setupKeyboardCommands();
     }
 
     update() {
