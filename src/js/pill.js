@@ -14,8 +14,8 @@ export default class Pill extends ObserverEntity {
         //TODO: make initial position into something nicer
         this.state.limitX = this.callbacks.getEntityList().board.dimensions.dimX;
         this.state.limitY = this.callbacks.getEntityList().board.dimensions.dimY;
-        this.state.posX = Math.floor(this.state.limitX / 2);
-        this.state.posY = Math.floor(this.state.limitY / 2);
+        this.state.posX = Math.trunc(this.state.limitX / 2);
+        this.state.posY = Math.trunc(this.state.limitY / 2);
         this.state.nourishment = nourishment;
 
         this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
@@ -39,8 +39,8 @@ export default class Pill extends ObserverEntity {
     }
 
     reset(){
-        let nextPosX = Math.floor(this.state.limitX / 2);
-        let nextPosY = Math.floor(this.state.limitY / 2);
+        let nextPosX = Math.trunc(this.state.limitX / 2);
+        let nextPosY = Math.trunc(this.state.limitY / 2);
 
         this.setState({
             nextPosX,
@@ -66,8 +66,8 @@ export default class Pill extends ObserverEntity {
 
     calculateNewRandomPosition(limitX, limitY) {
         let position = {};
-        position.posX = Math.floor(Math.random() * limitX);
-        position.posY = Math.floor(Math.random() * limitY);
+        position.posX = Math.trunc(Math.random() * limitX);
+        position.posY = Math.trunc(Math.random() * limitY);
 
         log.info('New position: ', position);
         return position;
