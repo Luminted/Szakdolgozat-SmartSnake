@@ -5,18 +5,18 @@ import cloneDeep from 'lodash/cloneDeep';
 import log from 'loglevel';
 
 export default class Board extends Entity {
-    constructor(callbacks, width = 30, length = 30) {
+    constructor(callbacks, width = 30, height = 30) {
         log.info('Initializing board...');
 
         super();
         this.state = {};
         this.state.width = width;
-        this.state.length = length;
+        this.state.height = height;
         this.callbacks = callbacks;
         this.state.board = [];
         for (let i = 0; i < this.state.width; ++i) {
             this.state.board.push([]);
-            for (let j = 0; j < this.state.length; ++j) {
+            for (let j = 0; j < this.state.height; ++j) {
                 this.state.board[i].push({
                     id: '' + i + j,
                     posX: i,
@@ -74,7 +74,7 @@ export default class Board extends Entity {
     getTilesAsArray() {
         let tiles = [];
         for (let i = 0; i < this.state.width; ++i) {
-            for (let j = 0; j < this.state.length; ++j) {
+            for (let j = 0; j < this.state.height; ++j) {
                 tiles.push(this.board[i][j]);
             }
         }
@@ -84,11 +84,11 @@ export default class Board extends Entity {
     get dimensions() {
         return {
             dimX: this.state.width,
-            dimY: this.state.length
+            dimY: this.state.height
         }
     }
 
-    get board(){
+    get board() {
         return this.state.board;
     }
 
