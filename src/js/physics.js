@@ -46,6 +46,15 @@ export default class Physics extends Subject {
             }
         }
 
+        if(snake.target.posX === snake.head.posX && snake.target.posY === snake.head.posY){
+            log.info('<---------------TARGET_REACHED--------------->');
+            for(let observer of this.observers){
+                observer.onNotify(snake, {
+                    type: 'TARGET_REACHED',
+                })
+            }
+        }
+
         for (let node of snake.state.body.slice(1)) {
             if (snake.head.posX === node.posX && snake.head.posY === node.posY) {
                 log.info('<---------------BODY_COLLISION_ACITON--------------->');

@@ -19,7 +19,11 @@ export default class Snake extends ObserverEntity {
         this.state._velocity = startVelocity;
         this.state._velocityY = 0;
         this.state._velocityX = 0;
-        this.state.status = "ALIVE";
+        this.state._status = "ALIVE";
+        this.state._target = {
+            posX: 15,
+            posY: 15
+        };
 
         for (let i = 0; i < this.state.length; ++i) {
             this.state.body[i] = {
@@ -109,6 +113,11 @@ export default class Snake extends ObserverEntity {
                     status: 'DEAD'
                 });
                 break;
+            case ('TARGET_REACHED'):
+                let nextTarget = this.calculateNextTarget();
+                this.setState({
+                    _target: nextTarget
+                })
         }
     }
 
@@ -176,6 +185,21 @@ export default class Snake extends ObserverEntity {
         return nextHead;
     }
 
+    calculateNextTarget(){
+        let board = this.callbacks.getEntityList().board;
+        let boardDimensions = board.dimensions;
+        let randPosX = Math.trunc(Math.random() * boardDimensions.dimX);
+        let randPosY = Math.trunc(Math.random() * boardDimensions.dimY);
+        return {
+            posX: randPosX,
+            posY: randPosY
+        }
+    }
+
+    isAlive(){
+        return this.state._status === 'ALIVE';
+    }
+
     get body() {
         return this.state.body;
     }
@@ -208,6 +232,10 @@ export default class Snake extends ObserverEntity {
             length: nextBody.length,
             body: nextBody
         });
+    }
+
+    get target(){
+        return this.state._target
     }
 
     isOppositeDirection(direction) {
