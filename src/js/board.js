@@ -32,18 +32,23 @@ export default class Board extends Entity {
     update() {
         let nextState = cloneDeep(this.state);
         nextState.board = cloneDeep(this.initialBoard);
+        
+        let snake = this.callbacks.getEntityList().snake;
 
-        let snakeBody = this.callbacks.getEntityList().snake.body;
+        let snakeBody = snake.body;
         for(let node of snakeBody){
             let nextTile = cloneDeep(nextState.board[node.posX][node.posY]);
             nextTile.status = 'SNAKE';
             nextState.board[node.posX][node.posY] = nextTile;
         }
 
+        let targetPosition = snake.target;
+        let nextTargetTile = nextState.board[targetPosition.posX][targetPosition.posY];
+        nextTargetTile.status = 'TARGET';        
+
         let pillPosition = this.callbacks.getEntityList().pill.position;
-        let nextTile = nextState.board[pillPosition.posX][pillPosition.posY];
-        nextTile.status = 'PILL';
-        nextState.board[pillPosition.posX][pillPosition.posY] = nextTile;
+        let nextPillTile = nextState.board[pillPosition.posX][pillPosition.posY];
+        nextPillTile.status = 'PILL';
 
         this.state = nextState;
 
@@ -68,7 +73,10 @@ export default class Board extends Entity {
     }
 
     getTileByPosition(x, y) {
-        return this.state.board[x][y];
+        if(x >= 0 && x < this.state.width && y >= 0 && y < this.state.length){
+            return this.state.board[x][y];
+        }
+        return void 0;
     }
 
     getTilesAsArray() {

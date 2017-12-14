@@ -4,6 +4,8 @@ import ObserverEntity from './AbstractClasses/ObserverEntity';
 import cloneDeep from 'lodash/cloneDeep';
 import log from 'loglevel';
 
+import AI from './pathfinding-algorithms/randomTargets';
+
 export default class Snake extends ObserverEntity {
     constructor(callbacks, baseLength = 3, startX = 0, startY = 0, startDirection = 'RIGHT', startVelocity = 1) {
         log.info('Initializing Snake...');
@@ -24,6 +26,7 @@ export default class Snake extends ObserverEntity {
             posX: 15,
             posY: 15
         };
+        this.state.AI = new AI();
 
         for (let i = 0; i < this.state.length; ++i) {
             this.state.body[i] = {
@@ -47,10 +50,10 @@ export default class Snake extends ObserverEntity {
     }
 
     update() {
-        if (this.state.status === 'ALIVE') {
+        if (this.state._status === 'ALIVE') {
             let nextState = cloneDeep(this.state);
 
-            if(this.state.command){
+            if (this.state.command) {
                 this.state.command.execute(this);
                 nextState.command = void 0;
             }
@@ -70,7 +73,7 @@ export default class Snake extends ObserverEntity {
 
             this.setState(nextState);
         }
-        if (this.state.status === 'DEAD') {
+        if (this.state._status === 'DEAD') {
             log.info('SNAKE IS DEAD');
         }
     }
@@ -83,7 +86,7 @@ export default class Snake extends ObserverEntity {
         let _velocityX = 0;
         let body = startValues.startBody;
         let length = startValues.baseLength;
-        let status = "ALIVE";
+        let _status = "ALIVE";
 
         this.setState({
             direction,
@@ -92,7 +95,7 @@ export default class Snake extends ObserverEntity {
             _velocityX,
             body,
             length,
-            status,
+            _status,
         });
 
         log.info('<<<<Snake Reset>>>>');
@@ -105,19 +108,19 @@ export default class Snake extends ObserverEntity {
                 break;
             case ('WALL_COLLISION'):
                 this.setState({
-                    status: 'DEAD'
+                    _status: 'DEAD'
                 });
                 break;
             case ('BODY_COLLISION'):
                 this.setState({
-                    status: 'DEAD'
+                    _status: 'DEAD'
                 });
                 break;
             case ('TARGET_REACHED'):
-                let nextTarget = this.calculateNextTarget();
+                let nextTarget = this.state.AI.calculateTarget(this.callbacks.getEntityList().board, this.callbacks.getEntityList().snake);
                 this.setState({
                     _target: nextTarget
-                })
+                });
         }
     }
 
@@ -171,8 +174,7 @@ export default class Snake extends ObserverEntity {
                 nextVelocity.posX = 0;
                 nextVelocity.posY = -this.state._velocity;
                 break;
-        }
-        ;
+        };
         return nextVelocity;
     }
 
@@ -185,18 +187,9 @@ export default class Snake extends ObserverEntity {
         return nextHead;
     }
 
-    calculateNextTarget(){
-        let board = this.callbacks.getEntityList().board;
-        let boardDimensions = board.dimensions;
-        let randPosX = Math.trunc(Math.random() * boardDimensions.dimX);
-        let randPosY = Math.trunc(Math.random() * boardDimensions.dimY);
-        return {
-            posX: randPosX,
-            posY: randPosY
-        }
-    }
 
-    isAlive(){
+
+    isAlive() {
         return this.state._status === 'ALIVE';
     }
 
@@ -234,7 +227,7 @@ export default class Snake extends ObserverEntity {
         });
     }
 
-    get target(){
+    get target() {
         return this.state._target
     }
 
