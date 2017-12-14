@@ -36,7 +36,7 @@ window.onload = () => {
     function drawTiles(tiles) {
         for (let i = 0; i < tiles.length; ++i) {
             if (tiles[i].status === 'SNAKE') {
-                canvas.createRect(tiles[i].posX * 500 / 30, tiles[i].posY * 500 / 30, 500 / 30, 500 / 30, colors[i % colors.length]);
+                canvas.createRect(tiles[i].posX * 500 / 30, tiles[i].posY * 500 / 30, Math.ceil(500 / 30), Math.ceil(500 / 30), colors[i % colors.length]);
             } else if (tiles[i].status === 'PILL') {
                 canvas.createCircle(tiles[i].posX * 500 / 30 + 500 / 60, tiles[i].posY * 500 / 30 + 500 / 60, 500 / 60, 'red');
             }
