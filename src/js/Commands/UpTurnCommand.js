@@ -12,7 +12,7 @@ export default class UpTurnCommand extends Command{
 
     execute(snake){
         if(!(snake instanceof Snake)){
-            log.error('Not a Snake!');
+            //log.error('Not a Snake!');
         }else{
             snake.handleInput('UP');
         }

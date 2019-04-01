@@ -20,15 +20,14 @@ window.onload = () => {
 
 
     //Játékloop
-    config.mainloop = Mainloop.setMaxAllowedFPS(config.speed).setBegin(() => {}).setUpdate(() => {}).setDraw(() => {
-
-    }).setEnd(() => {
-        model.update();
+    config.mainloop = Mainloop.setUpdate(() => {
+        model.update(); 
+    }).setDraw(() => {
         let tiles = model.getEntityList().board.getTilesAsArray();
         drawTiles(tiles);
         canvas.renderScene();
         canvas.clearScene();
-    }).start();
+    }).setSimulationTimestep(1000/2)
 
     let colors = ['#E8E85C', '#ECA880', '#DCB468', '#ECA0A0', '#DC9CD0', '#C49CEC', '#A8A0EC', '#90B4EC', '#90CCE8', '#90E4C0', '#A4E4A4', '#A4E4A4', '#B4E490', '#B4E490', '#E8CC7C'];
 
@@ -51,7 +50,7 @@ window.onload = () => {
      * Játék ablakának inicializálása
      */
     function initViewPort(hoistOn = 'viewport-container', viewPortX = 500, viewPortY = 500) {
-        log.info('Initiating Viewport');
+        //log.info('Initiating Viewport');
         if (document.querySelectorAll('canvas').length === 0) {
             viewPort = document.createElement('canvas');
             viewPort.id = 'viewPort';
@@ -70,7 +69,7 @@ window.onload = () => {
             document.getElementById(hoistOn).appendChild(viewPortWrapperElement);
             canvas = new CanvasWrapper(500, 500, 'viewPort', '2d');
 
-            log.info('Viewport initiated');
+            //log.info('Viewport initiated');
         }
     }
 
@@ -90,6 +89,16 @@ window.onload = () => {
         let restartButton = document.querySelector('#restart-button');
         restartButton.addEventListener('click', function(event){
             model.reset();
+        })
+
+        let stopButton = document.querySelector('#stop-button');
+        stopButton.addEventListener('click', function(event){
+            config.mainloop.stop()
+        })
+
+        let startButton = document.querySelector('#start-button');
+        startButton.addEventListener('click', function(event){
+            config.mainloop.start()
         })
     }
 
