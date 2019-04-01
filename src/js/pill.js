@@ -6,7 +6,7 @@ import log from 'loglevel';
 
 export default class Pill extends ObserverEntity {
     constructor(callbacks, nourishment = 1) {
-        log.info('Initializing Pill...');
+        //log.info('Initializing Pill...');
         super();
 
         this.state = {};
@@ -14,13 +14,13 @@ export default class Pill extends ObserverEntity {
         //TODO: make initial position into something nicer
         this.state.limitX = this.callbacks.getEntityList().board.dimensions.dimX;
         this.state.limitY = this.callbacks.getEntityList().board.dimensions.dimY;
-        this.state.posX = Math.floor(this.state.limitX / 2);
-        this.state.posY = Math.floor(this.state.limitY / 2);
+        this.state.posX = Math.trunc(this.state.limitX / 2);
+        this.state.posY = Math.trunc(this.state.limitY / 2);
         this.state.nourishment = nourishment;
 
         this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
 
-        log.info('Pill initialized', this.state);
+        //log.info('Pill initialized', this.state);
     }
 
     update() {
@@ -31,22 +31,22 @@ export default class Pill extends ObserverEntity {
         let nextState = cloneDeep(this.state);
         Object.assign(nextState, options);
 
-        log.info('PILL');
-        log.info('prevState', this.state);
-        log.info('next state', nextState);
+        //log.info('PILL');
+        //log.info('prevState', this.state);
+        //log.info('next state', nextState);
 
         this.state = nextState;
     }
 
     reset(){
-        let nextPosX = Math.floor(this.state.limitX / 2);
-        let nextPosY = Math.floor(this.state.limitY / 2);
+        let nextPosX = Math.trunc(this.state.limitX / 2);
+        let nextPosY = Math.trunc(this.state.limitY / 2);
 
         this.setState({
             nextPosX,
             nextPosY
         });
-        log.info('<<<<Pill Reset>>>>');
+        //log.info('<<<<Pill Reset>>>>');
     }
 
     onNotify(entity, event) {
@@ -66,10 +66,10 @@ export default class Pill extends ObserverEntity {
 
     calculateNewRandomPosition(limitX, limitY) {
         let position = {};
-        position.posX = Math.floor(Math.random() * limitX);
-        position.posY = Math.floor(Math.random() * limitY);
+        position.posX = Math.trunc(Math.random() * limitX);
+        position.posY = Math.trunc(Math.random() * limitY);
 
-        log.info('New position: ', position);
+        //log.info('New position: ', position);
         return position;
 
     }

@@ -27,7 +27,7 @@ export default class Physics extends Subject {
 
         //TODO maybe board returns wall objects if position is out of bounds?
         //TODO Game does not end when hitting a wall. Fix that!
-        if (snake.head.posX < 0 || snake.head.posY > board.state.width || snake.head.posY < 0 || snake.head.posX > board.state.length) {
+        if (snake.head.posX < 0 || snake.head.posY >= board.state.height || snake.head.posY < 0 || snake.head.posX >= board.state.width) {
             log.info('<---------------WALL_COLLISION_ACITON--------------->');
             for (let observer of this.observers) {
                 observer.onNotify(undefined, {

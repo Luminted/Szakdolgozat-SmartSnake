@@ -12,7 +12,7 @@ export default class DownTurnCommand extends Command{
 
     execute(snake){
         if(!(snake instanceof Snake)){
-            log.error('Not a Snake!');
+            //log.error('Not a Snake!');
         }else{
             snake.handleInput('DOWN');
         }

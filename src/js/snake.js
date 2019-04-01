@@ -8,7 +8,7 @@ import AI from './pathfinding-algorithms/randomTargets';
 
 export default class Snake extends ObserverEntity {
     constructor(callbacks, baseLength = 3, startX = 0, startY = 0, startDirection = 'RIGHT', startVelocity = 1) {
-        log.info('Initializing Snake...');
+        //log.info('Initializing Snake...');
 
         super();
         this.state = {}
@@ -46,7 +46,7 @@ export default class Snake extends ObserverEntity {
 
         this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
 
-        log.info('Snake initialized ', this.state);
+        //log.info('Snake initialized ', this.state);
     }
 
     update() {
@@ -98,7 +98,7 @@ export default class Snake extends ObserverEntity {
             _status,
         });
 
-        log.info('<<<<Snake Reset>>>>');
+        //log.info('<<<<Snake Reset>>>>');
     }
 
     onNotify(entity, event) {
@@ -129,7 +129,7 @@ export default class Snake extends ObserverEntity {
         Object.assign(nextState, options);
 
         log.info('Snake');
-        log.info('Prev state', this.state);
+        //log.info('Prev state', this.state);
         log.info('Next state', nextState);
 
         this.state = nextState;
@@ -141,7 +141,7 @@ export default class Snake extends ObserverEntity {
                 _tmpDirection: direction
             })
         } else {
-            log.info('Not a valid direction');
+            //log.info('Not a valid direction');
         }
     }
 
@@ -207,6 +207,10 @@ export default class Snake extends ObserverEntity {
 
     get direction() {
         return this.state.direction;
+    }
+
+    isAlive(){
+        return (this.state._status === 'ALIVE');
     }
 
     eat(nourishment) {
