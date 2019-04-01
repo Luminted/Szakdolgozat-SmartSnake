@@ -91,6 +91,16 @@ window.onload = () => {
         restartButton.addEventListener('click', function(event){
             model.reset();
         })
+
+        let stopButton = document.querySelector('#stop-button');
+        stopButton.addEventListener('click', function(event){
+            config.mainloop.stop()
+        })
+
+        let startButton = document.querySelector('#start-button');
+        startButton.addEventListener('click', function(event){
+            config.mainloop.start()
+        })
     }
 
 
