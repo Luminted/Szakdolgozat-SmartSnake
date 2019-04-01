@@ -37,7 +37,7 @@ export default class Model {
 
         //TODO: Do something about initializatuion prevedence
 
-        const _snake = new Snake(this.callbacks, 3);
+        const _snake = new Snake(this.callbacks, 10);
         this.Entities.snake = _snake;
         const _board = new Board(this.callbacks);
         this.Entities.board = _board;
@@ -50,18 +50,19 @@ export default class Model {
     }
 
     update() {
-        for (let entity in this.Entities) {
-            this.Entities[entity].update();
+        if (this.Entities.snake.isAlive()) {
+            this.Entities.snake.update();
+            this._physics.update();
+            this.Entities.pill.update();
+            this.Entities.board.update();
         }
-
-        this._physics.update();
     }
 
     reset() {
         this.Entities.board.reset();
         this.Entities.snake.reset();
         this.Entities.pill.reset();
-        log.info('>>>>>>Game Reset<<<<<<')
+        //log.info('>>>>>>Game Reset<<<<<<')
     }
 
 
@@ -87,7 +88,7 @@ export default class Model {
     setupKeyboardCommands() {
         let commands = this.Commands;
         let snake = this.Entities.snake;
-        document.addEventListener('keydown',  (event) => {
+        document.addEventListener('keydown', (event) => {
             switch (event.key) {
                 case 'ArrowLeft':
                     event.preventDefault();

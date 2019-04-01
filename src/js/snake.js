@@ -191,6 +191,10 @@ export default class Snake extends ObserverEntity {
         return this.state.direction;
     }
 
+    isAlive(){
+        return (this.state._status === 'ALIVE');
+    }
+
     eat(nourishment) {
         let nextBody = cloneDeep(this.body);
 
