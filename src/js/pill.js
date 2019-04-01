@@ -6,7 +6,7 @@ import log from 'loglevel';
 
 export default class Pill extends ObserverEntity {
     constructor(callbacks, nourishment = 1) {
-        log.info('Initializing Pill...');
+        //log.info('Initializing Pill...');
         super();
 
         this.state = {};
@@ -20,7 +20,7 @@ export default class Pill extends ObserverEntity {
 
         this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
 
-        log.info('Pill initialized', this.state);
+        //log.info('Pill initialized', this.state);
     }
 
     update() {
@@ -31,9 +31,9 @@ export default class Pill extends ObserverEntity {
         let nextState = cloneDeep(this.state);
         Object.assign(nextState, options);
 
-        log.info('PILL');
-        log.info('prevState', this.state);
-        log.info('next state', nextState);
+        //log.info('PILL');
+        //log.info('prevState', this.state);
+        //log.info('next state', nextState);
 
         this.state = nextState;
     }
@@ -46,7 +46,7 @@ export default class Pill extends ObserverEntity {
             nextPosX,
             nextPosY
         });
-        log.info('<<<<Pill Reset>>>>');
+        //log.info('<<<<Pill Reset>>>>');
     }
 
     onNotify(entity, event) {
@@ -69,7 +69,7 @@ export default class Pill extends ObserverEntity {
         position.posX = Math.trunc(Math.random() * limitX);
         position.posY = Math.trunc(Math.random() * limitY);
 
-        log.info('New position: ', position);
+        //log.info('New position: ', position);
         return position;
 
     }

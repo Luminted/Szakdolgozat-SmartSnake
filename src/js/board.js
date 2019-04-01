@@ -6,7 +6,7 @@ import log from 'loglevel';
 
 export default class Board extends Entity {
     constructor(callbacks, width = 30, height = 30) {
-        log.info('Initializing board...');
+        //log.info('Initializing board...');
 
         super();
         this.state = {};
@@ -26,7 +26,7 @@ export default class Board extends Entity {
             }
         }
         this.initialBoard = cloneDeep(this.state.board);
-        log.info('Board initialized', this.state);
+        //log.info('Board initialized', this.state);
     }
 
     update() {
@@ -53,16 +53,16 @@ export default class Board extends Entity {
         this.setState({
             board: this.initialBoard
         });
-        log.info('<<<<Board Reset>>>>');
+        //log.info('<<<<Board Reset>>>>');
     }
 
     setState(options) {
         let nextState = cloneDeep(this.state);
         Object.assign(nextState, options);
 
-        log.info('BOARD');
-        log.info('prevState', this.state);
-        log.info('next state', nextState);
+        //log.info('BOARD');
+        //log.info('prevState', this.state);
+        //log.info('next state', nextState);
 
         this.state = nextState;
     }
