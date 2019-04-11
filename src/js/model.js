@@ -8,6 +8,8 @@ import RightTurnCommand from './Commands/RightTurnCommand';
 import DownTurnCommand from './Commands/DownTurnCommand';
 import UpTurnCommand from './Commands/UpTurnCommand';
 
+import AStart from './pathfinding-algorithms/AStar';
+
 import log from 'loglevel';
 
 export default class Model {
@@ -77,7 +79,6 @@ export default class Model {
         for (let subject in this.Subjects) {
             callbacks[subject] = {};
             callbacks[subject].subscribe = this.Subjects[subject].subscibe;
-            console.log()
         }
         return callbacks;
     }

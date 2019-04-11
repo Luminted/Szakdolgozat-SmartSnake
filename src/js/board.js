@@ -73,7 +73,7 @@ export default class Board extends Entity {
     }
 
     getTileByPosition(x, y) {
-        if(x >= 0 && x < this.state.width && y >= 0 && y < this.state.length){
+        if(x >= 0 && x < this.state.width && y >= 0 && y < this.state.height){
             return this.state.board[x][y];
         }
         return void 0;

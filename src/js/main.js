@@ -27,7 +27,7 @@ window.onload = () => {
         drawTiles(tiles);
         canvas.renderScene();
         canvas.clearScene();
-    }).setSimulationTimestep(1000/2)
+    }).setSimulationTimestep(1000/5)
 
     let colors = ['#E8E85C', '#ECA880', '#DCB468', '#ECA0A0', '#DC9CD0', '#C49CEC', '#A8A0EC', '#90B4EC', '#90CCE8', '#90E4C0', '#A4E4A4', '#A4E4A4', '#B4E490', '#B4E490', '#E8CC7C'];
 

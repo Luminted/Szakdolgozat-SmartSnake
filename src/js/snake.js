@@ -4,7 +4,12 @@ import ObserverEntity from './AbstractClasses/ObserverEntity';
 import cloneDeep from 'lodash/cloneDeep';
 import log from 'loglevel';
 
-import AI from './pathfinding-algorithms/randomTargets';
+import AStart from './pathfinding-algorithms/AStar';
+
+import LeftTurnCommand from './Commands/LeftTurnCommand';
+import RightTurnCommand from './Commands/RightTurnCommand';
+import DownTurnCommand from './Commands/DownTurnCommand';
+import UpTurnCommand from './Commands/UpTurnCommand';
 
 export default class Snake extends ObserverEntity {
     constructor(callbacks, baseLength = 3, startX = 0, startY = 0, startDirection = 'RIGHT', startVelocity = 1) {
@@ -26,7 +31,6 @@ export default class Snake extends ObserverEntity {
             posX: 15,
             posY: 15
         };
-        this.state.AI = new AI();
 
         for (let i = 0; i < this.state.length; ++i) {
             this.state.body[i] = {
@@ -52,6 +56,14 @@ export default class Snake extends ObserverEntity {
     update() {
         if (this.state._status === 'ALIVE') {
             let nextState = cloneDeep(this.state);
+            let pill = this.callbacks.getEntityList().pill;
+            let board = this.callbacks.getEntityList().board
+            let path = AStart(this.head, pill.position, board);
+
+            if(path.length > 1 ){
+                let newCommand = this.calculateCommand(this.head, path[path.length - 2]);
+                this.setState({command: newCommand});
+            }
 
             if (this.state.command) {
                 this.state.command.execute(this);
@@ -117,10 +129,11 @@ export default class Snake extends ObserverEntity {
                 });
                 break;
             case ('TARGET_REACHED'):
-                let nextTarget = this.state.AI.calculateTarget(this.callbacks.getEntityList().board, this.callbacks.getEntityList().snake);
+                let pill = this.callbacks.getEntityList().pill;
+                let newTarget = pill.position;
                 this.setState({
-                    _target: nextTarget
-                });
+                    _target: newTarget
+                })
         }
     }
 
@@ -128,9 +141,9 @@ export default class Snake extends ObserverEntity {
         let nextState = cloneDeep(this.state);
         Object.assign(nextState, options);
 
-        log.info('Snake');
-        //log.info('Prev state', this.state);
-        log.info('Next state', nextState);
+        // log.info('Snake');
+        // log.info('Prev state', this.state);
+        // log.info('Next state', nextState);
 
         this.state = nextState;
     }
@@ -185,6 +198,26 @@ export default class Snake extends ObserverEntity {
         nextHead.posY = head.posY + velocityY;
 
         return nextHead;
+    }
+
+    calculateCommand(from, to){
+        let fromX = from.posX;
+        let fromY = from.posY;
+        let toX = to.posX;
+        let toY = to.posY;
+
+        if(fromX - toX > 0){
+            return new LeftTurnCommand();
+        }
+        if(fromX - toX < 0){
+            return new RightTurnCommand();
+        }
+        if(fromY - toY > 0){
+            return new UpTurnCommand();
+        }
+        if(fromY - toY < 0){
+            return new DownTurnCommand();
+        }
     }
 
 
