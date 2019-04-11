@@ -53,7 +53,9 @@ export default class Pill extends ObserverEntity {
         switch (event.type) {
             case ('PILL_COLLISION'):
             let newPosition = this.calculateNewRandomPosition(this.state.limitX, this.state.limitY);
-            while(this.callbacks.getEntityList().board.getTileByPosition(newPosition.posX, newPosition.posY).status === 'SNAKE'){
+            let board = this.callbacks.getEntityList().board
+            let targetTile = board.getTileByPosition(newPosition.posX, newPosition.posY)
+            while(targetTile.status === 'SNAKE'){
                 newPosition = this.calculateNewRandomPosition(this.state.limitX, this.state.limitY);
             }         
                 this.setState({

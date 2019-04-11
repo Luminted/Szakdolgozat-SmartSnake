@@ -44,6 +44,23 @@ export default class Physics extends Subject {
                     nourishment: this.callbacks.getEntityList().pill.nourishment
                 });
             }
+            if(snake.target.posX === snake.head.posX && snake.target.posY === snake.head.posY){
+                log.info('<---------------TARGET_REACHED--------------->');
+                for(let observer of this.observers){
+                    observer.onNotify(snake, {
+                        type: 'TARGET_REACHED',
+                    })
+                }
+            }
+        }
+
+        if(snake.target.posX === snake.head.posX && snake.target.posY === snake.head.posY){
+            log.info('<---------------TARGET_REACHED--------------->');
+            for(let observer of this.observers){
+                observer.onNotify(snake, {
+                    type: 'TARGET_REACHED',
+                })
+            }
         }
 
         for (let node of snake.state.body.slice(1)) {
