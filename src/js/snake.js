@@ -1,8 +1,8 @@
-"use strict"
+//'use strict'
 
 import ObserverEntity from './AbstractClasses/ObserverEntity';
 import cloneDeep from 'lodash/cloneDeep';
-import log from 'loglevel';
+import ConfigError from './errors/ConfigError.js';
 
 import AStart from './pathfinding-algorithms/AStar';
 
@@ -10,107 +10,114 @@ import LeftTurnCommand from './Commands/LeftTurnCommand';
 import RightTurnCommand from './Commands/RightTurnCommand';
 import DownTurnCommand from './Commands/DownTurnCommand';
 import UpTurnCommand from './Commands/UpTurnCommand';
+import { throws } from 'assert';
 
 export default class Snake extends ObserverEntity {
-    constructor(callbacks, baseLength = 3, startX = 0, startY = 0, startDirection = 'RIGHT', startVelocity = 1) {
-        //log.info('Initializing Snake...');
+    constructor(callbacks, config){
 
         super();
+        let parsedConfig = this.parseConfig(config)
         this.state = {}
-        this.state.length = baseLength;
-        this.state.body = [];
         this.callbacks = callbacks;
-        this.command = void 0;
-        this.state._tmpDirection = void 0;
-        this.state.direction = startDirection;
-        this.state._velocity = startVelocity;
-        this.state._velocityY = 0;
-        this.state._velocityX = 0;
-        this.state._status = "ALIVE";
-        this.state._target = {
-            posX: 15,
-            posY: 15
-        };
-
-        for (let i = 0; i < this.state.length; ++i) {
-            this.state.body[i] = {
-                posX: startX,
-                posY: startY
-            }
-        }
-
-        this.state.startValues = {
-            baseLength,
-            startX,
-            startY,
-            startDirection,
-            startVelocity,
-            startBody: this.state.body
-        };
+        this.state.command = void 0;
+        this.state.tmpDirection = void 0;
+        this.state.status = "ALIVE";
+        this.state.config = config;
+        Object.assign(this.state, parsedConfig);
 
         this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
 
         //log.info('Snake initialized ', this.state);
     }
 
+    parseConfig(config) {
+        if(config.startDirection == undefined || config.startVelocity == undefined || config.startX == undefined || config.startY == undefined || config.baseLength == undefined){
+            throw new ConfigError('Missing fields in configuration. Needed fields: startdirection: (LEFT | RIGHT | UP | DOWN), startVelocity: integer, startX: integer, startY:integer, baseLength: integer');
+        }
+        let parsedConfig = {}
+        parsedConfig.body = [];
+        parsedConfig.direction = config.startDirection;
+        parsedConfig.baseVelocity = Number(config.startVelocity);
+        for (let i = 0; i < config.baseLength; ++i) {
+            parsedConfig.body[i] = {
+                posX: Number(config.startX),
+                posY: Number(config.startY)
+            }
+        }
+        return parsedConfig;
+    }
+
     update() {
-        if (this.state._status === 'ALIVE') {
+        if (this.state.status === 'ALIVE') {
             let nextState = cloneDeep(this.state);
             let pill = this.callbacks.getEntityList().pill;
-            let board = this.callbacks.getEntityList().board
-            let path = AStart(this.head, pill.position, board);
+            let board = this.callbacks.getEntityList().board;
+            let path;
 
-            if(path.length > 1 ){
-                let newCommand = this.calculateCommand(this.head, path[path.length - 2]);
-                this.setState({command: newCommand});
+            if (!this.target) {
+                nextState.target = pill.position
             }
+            // if(this.target){
+            //     path = AStart(this.head, this.target, board);
+            // }
+
+            // if (path && path.length > 1) {
+            //     let nextCommand = this.calculateCommand(this.head, path[path.length - 2]);
+            //     this.setState({
+            //         command: nextCommand
+            //     })
+            // }
 
             if (this.state.command) {
                 this.state.command.execute(this);
                 nextState.command = void 0;
             }
 
-            if (this.state._tmpDirection && !this.isOppositeDirection(this.state._tmpDirection)) {
-                nextState.direction = this.state._tmpDirection;
+            if (this.state.tmpDirection && !this.isOppositeDirection(this.state.tmpDirection)) {
+                nextState.direction = this.state.tmpDirection;
                 //TODO: This feels hacky. Look at is later!
-                nextState._tmpDirection = void 0;
+                nextState.tmpDirection = void 0;
             }
 
             let nextVelocity = this.calculateVelocity(nextState.direction);
-            let nextBody = this.move(nextVelocity);
+            let nextBody = this.move(nextVelocity.x, nextVelocity.y);
 
             nextState.body = nextBody;
-            nextState._velocityX = nextVelocity.posX;
-            nextState._velocityY = nextVelocity.posY;
 
             this.setState(nextState);
         }
-        if (this.state._status === 'DEAD') {
+        if (this.state.status === 'DEAD') {
             log.info('SNAKE IS DEAD');
         }
     }
 
     reset() {
-        let startValues = this.state.startValues;
-        let direction = startValues.startDirection;
-        let _velocity = startValues.startVelocity;
-        let _velocityY = 0;
-        let _velocityX = 0;
-        let body = startValues.startBody;
-        let length = startValues.baseLength;
-        let _status = "ALIVE";
+        let parsedConfig = this.parseConfig(this.config);
+        let nextState = {
+         command: void 0,
+         tmpDirection: void 0,
+         velocityY: 0,
+         velocityX: 0,
+         status: "ALIVE"
+        }
+        Object.assign(nextState, parsedConfig);
+        this.setState(nextState);
+    }
 
-        this.setState({
-            direction,
-            _velocity,
-            _velocityY,
-            _velocityX,
-            body,
-            length,
-            _status,
-        });
-
-        //log.info('<<<<Snake Reset>>>>');
+    setTarget(targetObject) {
+        if (targetObject == undefined || targetObject.position == undefined) {
+            this.setState({
+                target: undefined
+            });
+        } else {
+            let position = targetObject.position;
+            this.setState({
+                target: {
+                    posX: position.posX,
+                    posY: position.posY
+                }
+            });
+        }
     }
 
     onNotify(entity, event) {
@@ -120,19 +127,19 @@ export default class Snake extends ObserverEntity {
                 break;
             case ('WALL_COLLISION'):
                 this.setState({
-                    _status: 'DEAD'
+                    status: 'DEAD'
                 });
                 break;
             case ('BODY_COLLISION'):
                 this.setState({
-                    _status: 'DEAD'
+                    status: 'DEAD'
                 });
                 break;
             case ('TARGET_REACHED'):
                 let pill = this.callbacks.getEntityList().pill;
                 let newTarget = pill.position;
                 this.setState({
-                    _target: newTarget
+                    target: newTarget
                 })
         }
     }
@@ -141,51 +148,45 @@ export default class Snake extends ObserverEntity {
         let nextState = cloneDeep(this.state);
         Object.assign(nextState, options);
 
-        // log.info('Snake');
-        // log.info('Prev state', this.state);
-        // log.info('Next state', nextState);
-
         this.state = nextState;
     }
 
     handleInput(direction) {
         if (!this.isOppositeDirection(direction)) {
             this.setState({
-                _tmpDirection: direction
+                tmpDirection: direction
             })
-        } else {
-            //log.info('Not a valid direction');
         }
     }
 
-    move(velocity) {
+    move(velocityX, velocityY) {
         let nextBody = cloneDeep(this.body);
 
         nextBody.pop();
-        nextBody.unshift(this.calculateNextHead(velocity.posX, velocity.posY));
+        nextBody.unshift(this.calculateNextHead(velocityX, velocityY));
 
         return nextBody;
     }
 
     calculateVelocity(direction) {
         let nextVelocity = {};
-        //TODO rename pos to vel
+        //TODO: rename pos to vel
         switch (direction) {
             case 'RIGHT':
-                nextVelocity.posX = this.state._velocity;
-                nextVelocity.posY = 0;
+                nextVelocity.x = this.state.baseVelocity;
+                nextVelocity.y = 0;
                 break;
             case 'LEFT':
-                nextVelocity.posX = -this.state._velocity;
-                nextVelocity.posY = 0;
+                nextVelocity.x = -this.state.baseVelocity;
+                nextVelocity.y = 0;
                 break;
             case 'DOWN':
-                nextVelocity.posX = 0;
-                nextVelocity.posY = this.state._velocity;
+                nextVelocity.x = 0;
+                nextVelocity.y = this.state.baseVelocity;
                 break;
             case 'UP':
-                nextVelocity.posX = 0;
-                nextVelocity.posY = -this.state._velocity;
+                nextVelocity.x = 0;
+                nextVelocity.y = -this.state.baseVelocity;
                 break;
         };
         return nextVelocity;
@@ -200,54 +201,33 @@ export default class Snake extends ObserverEntity {
         return nextHead;
     }
 
-    calculateCommand(from, to){
+    calculateCommand(from, to) {
         let fromX = from.posX;
         let fromY = from.posY;
         let toX = to.posX;
         let toY = to.posY;
+        let currDirection = this.direction;
 
-        if(fromX - toX > 0){
+        if (fromX - toX > 0 && !(currDirection == 'RIGHT')) {
             return new LeftTurnCommand();
         }
-        if(fromX - toX < 0){
+        if (fromX - toX < 0 && !(currDirection == 'LEFT')) {
             return new RightTurnCommand();
         }
-        if(fromY - toY > 0){
+        if (fromY - toY > 0 && !(currDirection == 'DOWN')) {
             return new UpTurnCommand();
         }
-        if(fromY - toY < 0){
+        if (fromY - toY < 0 && !(currDirection == 'UP')) {
             return new DownTurnCommand();
         }
     }
 
-
-
-    isAlive() {
-        return this.state._status === 'ALIVE';
-    }
-
-    get body() {
-        return this.state.body;
-    }
-
-    get velocity() {
-        return this.state._velocity;
-    }
-
-    get head() {
-        return this.body[0];
-    }
-
-    get direction() {
-        return this.state.direction;
-    }
-
-    eat(nourishment) {
+    eat(gain) {
         let nextBody = cloneDeep(this.body);
 
-        let tailNode = nextBody[this.state.length - 1];
+        let tailNode = nextBody[this.bodyLength - 1];
 
-        for (let i = 0; i < nourishment; i++) {
+        for (let i = 0; i < gain; i++) {
             nextBody.push({
                 posX: tailNode.posX,
                 posY: tailNode.posY
@@ -255,14 +235,10 @@ export default class Snake extends ObserverEntity {
         }
 
         this.setState({
-            length: nextBody.length,
             body: nextBody
         });
     }
 
-    get target() {
-        return this.state._target
-    }
 
     isOppositeDirection(direction) {
         if (this.state.direction === 'RIGHT' && direction === 'LEFT') {
@@ -275,5 +251,40 @@ export default class Snake extends ObserverEntity {
             return true;
         }
         return false;
+    }
+
+    isAlive() {
+        return this.state.status === 'ALIVE';
+    }
+
+    get bodyLength(){
+        return this.state.body.length;
+    }
+
+    get body() {
+        return this.state.body;
+    }
+
+    get baseVelocity() {
+        return this.state.baseVelocity;
+    }
+
+    get head() {
+        return this.body[0];
+    }
+
+    get direction() {
+        return this.state.direction;
+    }
+
+    get target() {
+        return this.state.target;
+    }
+
+    get config(){
+        return this.state.config;
+    }
+    get status(){
+        return this.state.status;
     }
 }

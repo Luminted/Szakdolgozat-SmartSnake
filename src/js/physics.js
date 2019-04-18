@@ -1,4 +1,4 @@
-"use strinct";
+// "use strinct";
 
 import log from 'loglevel';
 import Subject from './AbstractClasses/Subject'
@@ -23,7 +23,7 @@ export default class Physics extends Subject {
         const board = this.callbacks.getEntityList().board;
         const pill = this.callbacks.getEntityList().pill;
         const snakeDirection = snake.direction;
-        const velocity = snake.velocity;
+        const velocity = snake.baseVelocity;
 
         //TODO maybe board returns wall objects if position is out of bounds?
         //TODO Game does not end when hitting a wall. Fix that!
@@ -44,7 +44,7 @@ export default class Physics extends Subject {
                     nourishment: this.callbacks.getEntityList().pill.nourishment
                 });
             }
-            if(snake.target.posX === snake.head.posX && snake.target.posY === snake.head.posY){
+            if(snake.target && (snake.target.posX === snake.head.posX && snake.target.posY === snake.head.posY)){
                 log.info('<---------------TARGET_REACHED--------------->');
                 for(let observer of this.observers){
                     observer.onNotify(snake, {
@@ -54,7 +54,7 @@ export default class Physics extends Subject {
             }
         }
 
-        if(snake.target.posX === snake.head.posX && snake.target.posY === snake.head.posY){
+        if(snake.target && (snake.target.posX === snake.head.posX && snake.target.posY === snake.head.posY)){
             log.info('<---------------TARGET_REACHED--------------->');
             for(let observer of this.observers){
                 observer.onNotify(snake, {

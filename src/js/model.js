@@ -13,7 +13,7 @@ import AStart from './pathfinding-algorithms/AStar';
 import log from 'loglevel';
 
 export default class Model {
-    constructor() {
+    constructor(config) {
         this.Commands = {};
 
         this.Commands.LeftTurn = new LeftTurnCommand();
@@ -39,16 +39,17 @@ export default class Model {
 
         //TODO: Do something about initializatuion prevedence
 
-        const _snake = new Snake(this.callbacks, 10);
+        const _snake = new Snake(this.callbacks, config.snakeConfig);
         this.Entities.snake = _snake;
         const _board = new Board(this.callbacks);
         this.Entities.board = _board;
         const _pill = new Pill(this.callbacks);
         this.Entities.pill = _pill;
 
-
-        this.addEventListener = this.setupKeyboardCommands.bind(this);
-        this.setupKeyboardCommands();
+        if(env && env.RUN_ENV == 'browser'){
+            this.addEventListener = this.setupKeyboardCommands.bind(this);
+            this.setupKeyboardCommands();
+        }
     }
 
     update() {
