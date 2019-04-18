@@ -3,14 +3,12 @@ import Snake from './snake.js';
 import Pill from './pill.js';
 import Physics from './physics';
 
+import env from '../../env.json'
+
 import LeftTurnCommand from './Commands/LeftTurnCommand';
 import RightTurnCommand from './Commands/RightTurnCommand';
 import DownTurnCommand from './Commands/DownTurnCommand';
 import UpTurnCommand from './Commands/UpTurnCommand';
-
-import AStart from './pathfinding-algorithms/AStar';
-
-import log from 'loglevel';
 
 export default class Model {
     constructor(config) {
@@ -41,7 +39,7 @@ export default class Model {
 
         const _snake = new Snake(this.callbacks, config.snakeConfig);
         this.Entities.snake = _snake;
-        const _board = new Board(this.callbacks);
+        const _board = new Board(this.callbacks, config.boardConfig);
         this.Entities.board = _board;
         const _pill = new Pill(this.callbacks);
         this.Entities.pill = _pill;
@@ -86,7 +84,7 @@ export default class Model {
 
     //************************************************EVENTLISTENERS****************************************************************************
 
-    //TODO Move this in a separate file
+    //TODO: Move this in a separate file
     setupKeyboardCommands() {
         let commands = this.Commands;
         let snake = this.Entities.snake;

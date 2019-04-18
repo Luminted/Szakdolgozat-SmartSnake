@@ -1,33 +1,32 @@
-"use strict"
+//'use strict'
 
-import log from 'loglevel';
+//import log from 'loglevel';
 import Mainloop from 'mainloop.js';
 import CanvasWrapper from './canvasWrapper';
 import Model from './model';
+
+import config from '../config/config.json';
 
 window.onload = () => {
     let viewPort
     let viewPortWrapperElement
     let canvas
 
-    let config = {
-        speed: 10
-    }
-
+    let state = {}
     initViewPort();
-    const model = new Model();
-    initComponents(config);
+    const model = new Model(config);
+    initComponents(config.main);
 
 
     //Játékloop
-    config.mainloop = Mainloop.setUpdate(() => {
+    state.mainloop = Mainloop.setUpdate(() => {
         model.update(); 
     }).setDraw(() => {
         let tiles = model.getEntityList().board.getTilesAsArray();
         drawTiles(tiles);
         canvas.renderScene();
         canvas.clearScene();
-    }).setSimulationTimestep(1000/5)
+    }).setSimulationTimestep(1000/15)
 
     let colors = ['#E8E85C', '#ECA880', '#DCB468', '#ECA0A0', '#DC9CD0', '#C49CEC', '#A8A0EC', '#90B4EC', '#90CCE8', '#90E4C0', '#A4E4A4', '#A4E4A4', '#B4E490', '#B4E490', '#E8CC7C'];
 
@@ -80,7 +79,7 @@ window.onload = () => {
         let speedSelector = document.querySelector('#speed-selector');
         speedSelector.value = config.speed;
         speedSelector.addEventListener('input', function (event) {
-            config.mainloop.setMaxAllowedFPS(speedSelector.value);
+            state.mainloop.setMaxAllowedFPS(speedSelector.value);
         });
 
         //dashboard
@@ -95,12 +94,12 @@ window.onload = () => {
 
         let stopButton = document.querySelector('#stop-button');
         stopButton.addEventListener('click', function(event){
-            config.mainloop.stop()
+            state.mainloop.stop()
         })
 
         let startButton = document.querySelector('#start-button');
         startButton.addEventListener('click', function(event){
-            config.mainloop.start()
+            state.mainloop.start()
         })
     }
 

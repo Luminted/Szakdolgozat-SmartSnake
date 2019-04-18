@@ -1,23 +1,32 @@
-"use strict"
-
 import Entity from './AbstractClasses/Entity';
 import cloneDeep from 'lodash/cloneDeep';
-import log from 'loglevel';
-
+import ConfigError from './errors/ConfigError.js'
 export default class Board extends Entity {
-    constructor(callbacks, width = 30, height = 30) {
+    constructor(callbacks, config) {
         //log.info('Initializing board...');
 
         super();
         this.state = {};
-        this.state.width = width;
-        this.state.height = height;
+        let parsedConfig = this.parseConfig(config);
+        Object.assign(this.state, parsedConfig);
         this.callbacks = callbacks;
-        this.state.board = [];
-        for (let i = 0; i < this.state.width; ++i) {
-            this.state.board.push([]);
-            for (let j = 0; j < this.state.height; ++j) {
-                this.state.board[i].push({
+        this.state.initialTiles = cloneDeep(this.state.tiles);
+        //log.info('Board initialized', this.state);
+    }
+
+    parseConfig(config){
+        if(config.width == undefined || config.height == undefined){
+            throw new ConfigError('Missing fields in config. Fields needed: width:integer, height: integer');
+        }
+        let parsedConfig = {};
+        parsedConfig.config = config;
+        parsedConfig.width = Number(config.width);
+        parsedConfig.height = Number(config.height);
+        parsedConfig.tiles = [];
+        for (let i = 0; i < parsedConfig.width; ++i) {
+            parsedConfig.tiles.push([]);
+            for (let j = 0; j < parsedConfig.height; ++j) {
+                parsedConfig.tiles[i].push({
                     id: '' + i + j,
                     posX: i,
                     posY: j,
@@ -25,13 +34,13 @@ export default class Board extends Entity {
                 })
             }
         }
-        this.initialBoard = cloneDeep(this.state.board);
-        //log.info('Board initialized', this.state);
+
+        return parsedConfig;
     }
 
     update() {
         let nextState = cloneDeep(this.state);
-        nextState.board = cloneDeep(this.initialBoard);
+        nextState.tiles = cloneDeep(this.state.initialTiles);
         
         let snake = this.callbacks.getEntityList().snake;
 
@@ -39,15 +48,15 @@ export default class Board extends Entity {
         for(let node of snakeBody){
             let nextTile = cloneDeep(nextState.board[node.posX][node.posY]);
             nextTile.status = 'SNAKE';
-            nextState.board[node.posX][node.posY] = nextTile;
+            nextState.tiles[node.posX][node.posY] = nextTile;
         }
 
         let targetPosition = snake.target;
-        let nextTargetTile = nextState.board[targetPosition.posX][targetPosition.posY];
+        let nextTargetTile = nextState.tiles[targetPosition.posX][targetPosition.posY];
         nextTargetTile.status = 'TARGET';        
 
         let pillPosition = this.callbacks.getEntityList().pill.position;
-        let nextPillTile = nextState.board[pillPosition.posX][pillPosition.posY];
+        let nextPillTile = nextState.tiles[pillPosition.posX][pillPosition.posY];
         nextPillTile.status = 'PILL';
 
         this.state = nextState;
@@ -56,9 +65,8 @@ export default class Board extends Entity {
 
     reset(){
         this.setState({
-            board: this.initialBoard
+            tiles: this.state.initialTiles
         });
-        //log.info('<<<<Board Reset>>>>');
     }
 
     setState(options) {
@@ -74,7 +82,7 @@ export default class Board extends Entity {
 
     getTileByPosition(x, y) {
         if(x >= 0 && x < this.state.width && y >= 0 && y < this.state.height){
-            return this.state.board[x][y];
+            return this.state.tiles[x][y];
         }
         return void 0;
     }
@@ -83,7 +91,7 @@ export default class Board extends Entity {
         let tiles = [];
         for (let i = 0; i < this.state.width; ++i) {
             for (let j = 0; j < this.state.height; ++j) {
-                tiles.push(this.board[i][j]);
+                tiles.push(this.tiles[i][j]);
             }
         }
         return tiles;
@@ -96,8 +104,8 @@ export default class Board extends Entity {
         }
     }
 
-    get board() {
-        return this.state.board;
+    get tiles() {
+        return this.state.tiles;
     }
 
 }
