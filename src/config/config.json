@@ -1,0 +1,16 @@
+{
+    "main":{
+        "speed":10
+    },
+    "boardConfig":{
+        "width": 30,
+        "height": 30
+    },
+    "snakeConfig": {
+        "baseLength": "3",
+        "startX": "0",
+        "startY": "0",
+        "startDirection": "RIGHT",
+        "startVelocity": "1"
+    }
+}
