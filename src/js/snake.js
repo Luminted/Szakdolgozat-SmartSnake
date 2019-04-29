@@ -10,7 +10,7 @@ import LeftTurnCommand from './Commands/LeftTurnCommand';
 import RightTurnCommand from './Commands/RightTurnCommand';
 import DownTurnCommand from './Commands/DownTurnCommand';
 import UpTurnCommand from './Commands/UpTurnCommand';
-import { throws } from 'assert';
+import IntCoordinate from './intCoordinate';
 
 export default class Snake extends ObserverEntity {
     constructor(callbacks, config){
@@ -39,10 +39,7 @@ export default class Snake extends ObserverEntity {
         parsedConfig.direction = config.startDirection;
         parsedConfig.baseVelocity = Number(config.startVelocity);
         for (let i = 0; i < config.baseLength; ++i) {
-            parsedConfig.body[i] = {
-                posX: Number(config.startX),
-                posY: Number(config.startY)
-            }
+            parsedConfig.body[i] = new IntCoordinate(Number(config.startX), Number(config.startY));
         }
         return parsedConfig;
     }
@@ -57,16 +54,16 @@ export default class Snake extends ObserverEntity {
             if (!this.target) {
                 nextState.target = pill.position
             }
-            // if(this.target){
-            //     path = AStart(this.head, this.target, board);
-            // }
+            if(this.target){
+                path = AStart(this.head, this.target, board);
+            }
 
-            // if (path && path.length > 1) {
-            //     let nextCommand = this.calculateCommand(this.head, path[path.length - 2]);
-            //     this.setState({
-            //         command: nextCommand
-            //     })
-            // }
+            if (path && path.length > 1) {
+                let nextCommand = this.calculateCommand(this.head, path[path.length - 2]);
+                this.setState({
+                    command: nextCommand
+                })
+            }
 
             if (this.state.command) {
                 this.state.command.execute(this);
@@ -194,18 +191,17 @@ export default class Snake extends ObserverEntity {
 
     calculateNextHead(velocityX, velocityY) {
         let head = this.head;
-        let nextHead = Object.assign({}, head);
-        nextHead.posX = head.posX + velocityX;
-        nextHead.posY = head.posY + velocityY;
+        let nextPosX = head.coordinates.x + velocityX;
+        let nextPosY = head.coordinates.y + velocityY;
 
-        return nextHead;
+        return new IntCoordinate(nextPosX,nextPosY);
     }
 
     calculateCommand(from, to) {
-        let fromX = from.posX;
-        let fromY = from.posY;
-        let toX = to.posX;
-        let toY = to.posY;
+        let fromX = from.coordinates.x;
+        let fromY = from.coordinates.y;
+        let toX = to.coordinates.x;
+        let toY = to.coordinates.y;
         let currDirection = this.direction;
 
         if (fromX - toX > 0 && !(currDirection == 'RIGHT')) {

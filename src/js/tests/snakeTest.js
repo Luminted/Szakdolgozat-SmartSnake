@@ -7,6 +7,7 @@ import DownTurnCommand from '../Commands/DownTurnCommand';
 import UpTurnCommand from '../Commands/UpTurnCommand';
 
 import assert from 'assert';
+import IntCoordinate from '../intCoordinate.js';
 
 
 export default {
@@ -20,7 +21,7 @@ export default {
             snake = model.getEntityList().snake;
         });
         describe('function parseConfig', function(){
-            it('should return an object with fields body: [{posX: integer, posY: integer}], direction: (LEFT | RIGHT | UP | DOWN), baseVelocity: integer', function(){
+            it('should return an object with fields body: [IntCoordinates->nullPosition = false], direction: (LEFT | RIGHT | UP | DOWN), baseVelocity: integer', function(){
                 let snakeConfig = {
                     startVelocity: "1",
                     baseLength: "2",
@@ -33,8 +34,8 @@ export default {
                 assert.equal(parsedConfig.body == undefined, false);
                 assert.equal(parsedConfig.body instanceof Array, true);
                 for(let node of parsedConfig.body){
-                    assert(Number.isInteger(node.posX), true);
-                    assert(Number.isInteger(node.posY), true);
+                    assert.equal(node instanceof IntCoordinate, true);
+                    assert.equal(node.nullPosition, false);
                 }
                 assert.equal(Number.isInteger(parsedConfig.baseVelocity), true);
                 assert.equal(directions.has(parsedConfig.direction), true);
@@ -109,14 +110,8 @@ export default {
                 snake.setState({
                     direction: "UP",
                 });
-                let from = {
-                    posX: 15,
-                    posY: 15
-                }
-                let to = {
-                    posX: 14,
-                    posY: 15
-                }
+                let from = new IntCoordinate(15,15);
+                let to = new IntCoordinate(14,15);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -128,14 +123,9 @@ export default {
                 snake.setState({
                     direction: "RIGHT",
                 });
-                let from = {
-                    posX: 15,
-                    posY: 15
-                }
-                let to = {
-                    posX: 14,
-                    posY: 15
-                }
+                let from = new IntCoordinate(15,15);
+
+                let to = new IntCoordinate(14,15);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -147,14 +137,8 @@ export default {
                 snake.setState({
                     direction: "UP",
                 });
-                let from = {
-                    posX: 15,
-                    posY: 15
-                }
-                let to = {
-                    posX: 16,
-                    posY: 15
-                }
+                let from = new IntCoordinate(15,15);
+                let to = new IntCoordinate(16,15);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -166,14 +150,9 @@ export default {
                 snake.setState({
                     direction: "LEFT",
                 });
-                let from = {
-                    posX: 15,
-                    posY: 15
-                }
-                let to = {
-                    posX: 14,
-                    posY: 15
-                }
+                let from = new IntCoordinate(15,15);
+
+                let to = new IntCoordinate(14,15);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -185,14 +164,8 @@ export default {
                 snake.setState({
                     direction: "RIGHT",
                 });
-                let from = {
-                    posX: 15,
-                    posY: 15
-                }
-                let to = {
-                    posX: 15,
-                    posY: 14
-                }
+                let from = new IntCoordinate(15,15);
+                let to = new IntCoordinate(15,14);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -204,14 +177,8 @@ export default {
                 snake.setState({
                     direction: "DOWN",
                 });
-                let from = {
-                    posX: 15,
-                    posY: 15
-                }
-                let to = {
-                    posX: 15,
-                    posY: 14
-                }
+                let from = new IntCoordinate(15,15);
+                let to = new IntCoordinate(15,14);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -223,14 +190,8 @@ export default {
                 snake.setState({
                     direction: "RIGHT",
                 });
-                let from = {
-                    posX: 15,
-                    posY: 15
-                }
-                let to = {
-                    posX: 15,
-                    posY: 16
-                }
+                let from = new IntCoordinate(15,15);
+                let to = new IntCoordinate(15,16);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -242,14 +203,8 @@ export default {
                 snake.setState({
                     direction: "UP",
                 });
-                let from = {
-                    posX: 15,
-                    posY: 15
-                }
-                let to = {
-                    posX: 15,
-                    posY: 16
-                }
+                let from = new IntCoordinate(15,15);
+                let to = new IntCoordinate(15,16);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -258,47 +213,39 @@ export default {
             });
         });
         describe("function calculateNextHead", function () {
-            it('should return head with position x=16, y=15', function () {
-                let head = {
-                    posX: 15,
-                    posY: 15
-                }
+            it('should return new IntCoordinate with position x=16, y=15', function () {
+                let head = new IntCoordinate(15,15);
+
                 let velocityX = 1;
                 let velocityY = 0;
                 snake.setState({
                     body: [head]
                 });
                 let nextHead = snake.calculateNextHead(velocityX, velocityY)
-                assert.equal(nextHead.posX, head.posX + velocityX);
-                assert.equal(nextHead.posY, head.posY + velocityY);
+                assert.equal(nextHead.coordinates.x, head.coordinates.x + velocityX);
+                assert.equal(nextHead.coordinates.y, head.coordinates.y + velocityY);
             });
             it('should return head with position x=15, y=16', function () {
-                let head = {
-                    posX: 15,
-                    posY: 15
-                }
+                let head = new IntCoordinate(15,15);
+ 
                 let velocityX = 0;
                 let velocityY = 1;
                 snake.setState({
                     body: [head]
                 });
                 let nextHead = snake.calculateNextHead(velocityX, velocityY)                
-                assert.equal(nextHead.posX, head.posX + velocityX);
-                assert.equal(nextHead.posY, head.posY + velocityY);
+                assert.equal(nextHead.coordinates.x, head.coordinates.x + velocityX);
+                assert.equal(nextHead.coordinates.y, head.coordinates.y + velocityY);
             });
-            it('should return an object with integer fields posX and posY',function(){
-                let head = {
-                    posX: 15,
-                    posY: 15
-                }
+            it('should return an new IntCoordinate',function(){
+                let head = new IntCoordinate(15,15);
                 let velocityX = 0;
                 let velocityY = 1;
                 snake.setState({
                     body: [head]
                 });
                 let nextHead = snake.calculateNextHead(velocityX, velocityY);
-                assert.equal(Number.isInteger(nextHead.posX),true);
-                assert.equal(Number.isInteger(nextHead.posY),true);
+                assert.equal(nextHead instanceof IntCoordinate, true);
             });
         });
 
@@ -308,7 +255,7 @@ export default {
                 let state = snake.state;
                 let parsedConfig = snake.parseConfig(config);
 
-                //scramble state
+                //scrambling state
                 let nextState = {
                     command: new LeftTurnCommand(),
                     tmpDirection: "TEST",
@@ -386,22 +333,18 @@ export default {
             it('Notification: TARGET_REACHED. Should set target to position of pill.', function () {
                 let pill = model.getEntityList().pill;
                 snake.setState({
-                    target: {
-                        posX: 15,
-                        posY: 15
-                    }
+                    target: new IntCoordinate(15,15)
                 });
                 pill.setState({
-                    posX: 16,
-                    posY: 16
+                    position: new IntCoordinate(16,16)
                 });
                 let notification = {
                     type: 'TARGET_REACHED'
                 }
                 snake.onNotify(null, notification);
 
-                assert.equal(snake.target.posX, pill.position.posX);
-                assert.equal(snake.target.posY, pill.position.posY);
+                assert.equal(snake.target.coordinates.x, pill.position.coordinates.x);
+                assert.equal(snake.target.coordinates.y, pill.position.coordinates.y);
             });
         });
         describe('function move', function(){
@@ -409,49 +352,49 @@ export default {
                 let velocityX = 1;
                 let velocityY = 0;
                 snake.setState({
-                    body: [{posX: 1, posY: 1}],
+                    body: [new IntCoordinate(1,1)],
                 })
-                let originalHeadX = snake.head.posX;
-                let originalHeadY = snake.head.posY;
+                let originalHeadX = snake.head.coordinates.x;
+                let originalHeadY = snake.head.coordinates.y;
                 let nextBody = snake.move(velocityX, velocityY);
-                assert.equal(nextBody[0].posX, originalHeadX + velocityX);
-                assert.equal(nextBody[0].posY, originalHeadY + velocityY);
+                assert.equal(nextBody[0].coordinates.x, originalHeadX + velocityX);
+                assert.equal(nextBody[0].coordinates.y, originalHeadY + velocityY);
             });
             it('should move head of snake by 1 to the left', function(){
                 let velocityX = -1;
                 let velocityY = 0;
                 snake.setState({
-                    body: [{posX: 1, posY: 1}],
+                    body: [new IntCoordinate(1,1)],
                 })
-                let originalHeadX = snake.head.posX;
-                let originalHeadY = snake.head.posY;
+                let originalHeadX = snake.head.coordinates.x;
+                let originalHeadY = snake.head.coordinates.y;
                 let nextBody = snake.move(velocityX, velocityY);
-                assert.equal(nextBody[0].posX, originalHeadX + velocityX);
-                assert.equal(nextBody[0].posY, originalHeadY + velocityY);
+                assert.equal(nextBody[0].coordinates.x, originalHeadX + velocityX);
+                assert.equal(nextBody[0].coordinates.y, originalHeadY + velocityY);
             });
             it('should move head of snake by 1 upward', function(){
                 let velocityX = 0;
                 let velocityY = -1;
                 snake.setState({
-                    body: [{posX: 1, posY: 1}],
+                    body: [new IntCoordinate(1,1)],
                 })
-                let originalHeadX = snake.head.posX;
-                let originalHeadY = snake.head.posY;
+                let originalHeadX = snake.head.coordinates.x;
+                let originalHeadY = snake.head.coordinates.y;
                 let nextBody = snake.move(velocityX, velocityY);
-                assert.equal(nextBody[0].posX, originalHeadX + velocityX);
-                assert.equal(nextBody[0].posY, originalHeadY + velocityY);
+                assert.equal(nextBody[0].coordinates.x, originalHeadX + velocityX);
+                assert.equal(nextBody[0].coordinates.y, originalHeadY + velocityY);
             });
             it('should move head of snake by 1 down', function(){
                 let velocityX = 0;
                 let velocityY = 1;
                 snake.setState({
-                    body: [{posX: 1, posY: 1}],
+                    body: [new IntCoordinate(1,1)],
                 })
-                let originalHeadX = snake.head.posX;
-                let originalHeadY = snake.head.posY;
+                let originalHeadX = snake.head.coordinates.x;
+                let originalHeadY = snake.head.coordinates.y;
                 let nextBody = snake.move(velocityX, velocityY);
-                assert.equal(nextBody[0].posX, originalHeadX + velocityX);
-                assert.equal(nextBody[0].posY, originalHeadY + velocityY);
+                assert.equal(nextBody[0].coordinates.x, originalHeadX + velocityX);
+                assert.equal(nextBody[0].coordinates.y, originalHeadY + velocityY);
             });
         });
         describe('function handleInput', function(){
