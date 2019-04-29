@@ -46,7 +46,7 @@ export default class Board extends Entity {
 
         let snakeBody = snake.body;
         for(let node of snakeBody){
-            let nextTile = cloneDeep(nextState.board[node.posX][node.posY]);
+            let nextTile = cloneDeep(nextState.tiles[node.posX][node.posY]);
             nextTile.status = 'SNAKE';
             nextState.tiles[node.posX][node.posY] = nextTile;
         }
