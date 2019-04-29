@@ -1,26 +1,36 @@
-"use strict";
-
 import ObserverEntity from './AbstractClasses/ObserverEntity';
 import cloneDeep from 'lodash/cloneDeep';
-import log from 'loglevel';
+import ConfigError from './errors/ConfigError.js';
+import IntCoordinate from './intCoordinate.js';
+import CoordinateError from './errors/IntCoordinateError';
+
 
 export default class Pill extends ObserverEntity {
-    constructor(callbacks, nourishment = 1) {
+    constructor(callbacks, config) {
         //log.info('Initializing Pill...');
         super();
+        let board = callbacks.getEntityList().board;
+        let parsedConfig = this.parseConfig(config);
 
-        this.state = {};
+        this.state = parsedConfig;
         this.callbacks = callbacks;
-        //TODO: make initial position into something nicer
-        this.state.limitX = this.callbacks.getEntityList().board.dimensions.dimX;
-        this.state.limitY = this.callbacks.getEntityList().board.dimensions.dimY;
-        this.state.posX = Math.trunc(this.state.limitX / 2);
-        this.state.posY = Math.trunc(this.state.limitY / 2);
-        this.state.nourishment = nourishment;
+        this.state.limitX = board.dimensions.dimX;
+        this.state.limitY = board.dimensions.dimY;
 
         this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
+    }
 
-        //log.info('Pill initialized', this.state);
+    parseConfig(config) {
+        if (config == undefined || config.pillValue == undefined || config.startPosX == undefined || config.startPosY == undefined) {
+            throw new ConfigError('Missing config or missing fields in config. Fields needed: pillValue: integer, startPosX: Integer, startPosY: Integer.');
+        }
+
+        let parsedConfig = {};
+        parsedConfig.pillValue = Number(config.pillValue);
+        parsedConfig.position = new IntCoordinate(Number(config.startPosX),Number(config.startPosY))
+        parsedConfig.config = config;
+
+        return parsedConfig;
     }
 
     update() {
@@ -31,59 +41,73 @@ export default class Pill extends ObserverEntity {
         let nextState = cloneDeep(this.state);
         Object.assign(nextState, options);
 
-        //log.info('PILL');
-        //log.info('prevState', this.state);
-        //log.info('next state', nextState);
-
         this.state = nextState;
     }
 
-    reset(){
-        let nextPosX = Math.trunc(this.state.limitX / 2);
-        let nextPosY = Math.trunc(this.state.limitY / 2);
+    reset() {
+        let parsedConfig = this.parseConfig(this.state.config);
 
         this.setState({
-            nextPosX,
-            nextPosY
+            position: parsedConfig.position,
+            pillValue: parsedConfig.pillValue
         });
-        //log.info('<<<<Pill Reset>>>>');
     }
 
     onNotify(entity, event) {
         switch (event.type) {
             case ('PILL_COLLISION'):
-            let newPosition = this.calculateNewRandomPosition(this.state.limitX, this.state.limitY);
-            let board = this.callbacks.getEntityList().board
-            let targetTile = board.getTileByPosition(newPosition.posX, newPosition.posY)
-            while(targetTile.status === 'SNAKE'){
-                newPosition = this.calculateNewRandomPosition(this.state.limitX, this.state.limitY);
-            }         
+            let snake = this.callbacks.getEntityList().snake
+                let newPosition = this.calculateNewRandomPosition(snake.body);
                 this.setState({
-                    posX: newPosition.posX,
-                    posY: newPosition.posY
+                    position: newPosition
                 });
                 break;
         }
     }
 
-    calculateNewRandomPosition(limitX, limitY) {
-        let position = {};
-        position.posX = Math.trunc(Math.random() * limitX);
-        position.posY = Math.trunc(Math.random() * limitY);
+    calculateNewRandomPosition(snakeBody) {
+        let limitX = this.state.limitX;
+        let limitY = this.state.limitY;
+        if(snakeBody.length == limitX * limitY){
+            return new IntCoordinate(undefined,undefined,true); 
+        }else{
+            let xPositions = [];
+            let yPositions = [];
+            for (let i = 0; i < limitX; i++){
+                let contains = false;
+                for(let node of snakeBody){
+                    contains = contains || node.posX == i;
+                }
+                if(!contains){
+                    xPositions.push(i);
+                }
+            }
+            for (let i = 0; i < limitY; i++){
+                let contains = false;
+                for(let node of snakeBody){
+                    contains = contains || node.posY == i;
+                }
+                if(!contains){
+                    yPositions.push(i);
+                }
+            }
+            let posX = xPositions[Math.trunc(Math.random() * xPositions.length)];
+            let posY = yPositions[Math.trunc(Math.random() * yPositions.length)];
 
-        //log.info('New position: ', position);
-        return position;
+            return new IntCoordinate(posX, posY);
+        }
 
     }
 
     get position() {
-        return ({
-            posX: this.state.posX,
-            posY: this.state.posY
-        })
+        return this.state.position;
     }
 
-    get nourishment() {
-        return this.state.nourishment;
+    get pillValue() {
+        return this.state.pillValue;
+    }
+
+    get config() {
+        return this.state.config;
     }
 }
