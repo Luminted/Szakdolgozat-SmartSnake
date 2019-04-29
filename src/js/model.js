@@ -41,7 +41,7 @@ export default class Model {
         this.Entities.snake = _snake;
         const _board = new Board(this.callbacks, config.boardConfig);
         this.Entities.board = _board;
-        const _pill = new Pill(this.callbacks);
+        const _pill = new Pill(this.callbacks, config.pillConfig);
         this.Entities.pill = _pill;
 
         if(env && env.RUN_ENV == 'browser'){

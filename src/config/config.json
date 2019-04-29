@@ -12,5 +12,10 @@
         "startY": "0",
         "startDirection": "RIGHT",
         "startVelocity": "1"
+    },
+    "pillConfig": {
+        "pillValue": 1,
+        "startPosX": 1,
+        "startPosY": 1
     }
 }
