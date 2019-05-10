@@ -1,21 +1,26 @@
 import Entity from './AbstractClasses/Entity';
 import cloneDeep from 'lodash/cloneDeep';
-import ConfigError from './errors/ConfigError.js'
+import ConfigError from './errors/ConfigError.js';
+import IntCoordinate from './intCoordinate.js';
+
+import uuidv1 from 'uuid/v1';
+
 export default class Board extends Entity {
     constructor(callbacks, config) {
         //log.info('Initializing board...');
 
         super();
         this.state = {};
+        this.state.ID = uuidv1();
         let parsedConfig = this.parseConfig(config);
         Object.assign(this.state, parsedConfig);
         this.callbacks = callbacks;
         this.state.initialTiles = cloneDeep(this.state.tiles);
-        //log.info('Board initialized', this.state);
+        this.state.config = config;
     }
 
-    parseConfig(config){
-        if(config.width == undefined || config.height == undefined){
+    parseConfig(config) {
+        if (config.width == undefined || config.height == undefined) {
             throw new ConfigError('Missing fields in config. Fields needed: width:integer, height: integer');
         }
         let parsedConfig = {};
@@ -28,8 +33,7 @@ export default class Board extends Entity {
             for (let j = 0; j < parsedConfig.height; ++j) {
                 parsedConfig.tiles[i].push({
                     id: '' + i + j,
-                    posX: i,
-                    posY: j,
+                    position: new IntCoordinate(i, j),
                     status: 'EMPTY'
                 })
             }
@@ -39,31 +43,36 @@ export default class Board extends Entity {
     }
 
     update() {
-        let nextState = cloneDeep(this.state);
-        nextState.tiles = cloneDeep(this.state.initialTiles);
-        
-        let snake = this.callbacks.getEntityList().snake;
+        let nextTiles = cloneDeep(this.state.initialTiles);
+        let snakes = this.callbacks.getEntityList().snakes;
+        let pills = this.callbacks.getEntityList().pills;
 
-        let snakeBody = snake.body;
-        for(let node of snakeBody){
-            let nextTile = cloneDeep(nextState.tiles[node.posX][node.posY]);
-            nextTile.status = 'SNAKE';
-            nextState.tiles[node.posX][node.posY] = nextTile;
+        //Adding snakes to board
+        for (let snake of snakes) {
+            let snakeBody = snake.body;
+            for (let node of snakeBody) {
+                if (!node.nullPosition) {
+                    nextTiles[node.coordinates.x][node.coordinates.y].status = 'SNAKE';
+                }
+            }
         }
 
-        let targetPosition = snake.target;
-        let nextTargetTile = nextState.tiles[targetPosition.posX][targetPosition.posY];
-        nextTargetTile.status = 'TARGET';        
+        //Adding pills to board
+        for (let pill of pills) {
+            let pillPosition = pill.position;
+            if (!pill.position.nullPosition) {
+                nextTiles[pillPosition.coordinates.x][pillPosition.coordinates.y].status = 'PILL';
+            }
+        }
 
-        let pillPosition = this.callbacks.getEntityList().pill.position;
-        let nextPillTile = nextState.tiles[pillPosition.posX][pillPosition.posY];
-        nextPillTile.status = 'PILL';
 
-        this.state = nextState;
-
+        let nextState = Object.assign({}, {
+            tiles: nextTiles
+        });
+        this.setState(nextState);
     }
 
-    reset(){
+    reset() {
         this.setState({
             tiles: this.state.initialTiles
         });
@@ -81,10 +90,10 @@ export default class Board extends Entity {
     }
 
     getTileByPosition(x, y) {
-        if(x >= 0 && x < this.state.width && y >= 0 && y < this.state.height){
+        if (x >= 0 && x < this.state.width && y >= 0 && y < this.state.height) {
             return this.state.tiles[x][y];
         }
-        return void 0;
+        return undefined
     }
 
     getTilesAsArray() {
@@ -106,6 +115,14 @@ export default class Board extends Entity {
 
     get tiles() {
         return this.state.tiles;
+    }
+
+    get config() {
+        return this.state.config;
+    }
+
+    get ID(){
+        return this.state.ID;
     }
 
 }

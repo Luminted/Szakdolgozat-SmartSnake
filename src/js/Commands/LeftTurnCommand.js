@@ -1,9 +1,7 @@
-"use strict"
+//'use strict'
 
 import Command from '../AbstractClasses/Command';
-import Snake from '../snake';
 
-import log from 'loglevel';
 
 export default class LeftTurnCommand extends Command{
     constructor(){
@@ -11,10 +9,6 @@ export default class LeftTurnCommand extends Command{
     }
 
     execute(snake){
-        if(!(snake instanceof Snake)){
-            //log.error('Not a Snake!');
-        }else{
-            snake.handleInput('LEFT');
-        }
+        return snake.handleInput('LEFT');
     }
 }

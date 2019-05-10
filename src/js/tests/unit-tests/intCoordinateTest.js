@@ -1,6 +1,5 @@
 import assert from 'assert';
-import IntCoordinate from '../intCoordinate.js';
-import CoordinateError from '../errors/IntCoordinateError.js';
+import IntCoordinate from '../../intCoordinate.js';
 
 describe('Unit testing IntCoordinate class', function(){
     describe('constructor', function(){
@@ -64,5 +63,5 @@ describe('Unit testing IntCoordinate class', function(){
             assert.equal(coordinate.nullPosition, true);
             assert.equal(coordinate.coordinates, undefined);
         });
-    })
+    });
 })

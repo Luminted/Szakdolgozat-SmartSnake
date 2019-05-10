@@ -7,11 +7,12 @@
         "height": 30
     },
     "snakeConfig": {
-        "baseLength": "3",
+        "baseLength": "1",
         "startX": "0",
         "startY": "0",
         "startDirection": "RIGHT",
-        "startVelocity": "1"
+        "startVelocity": "1",
+        "strategy": "AStar"
     },
     "pillConfig": {
         "pillValue": 1,

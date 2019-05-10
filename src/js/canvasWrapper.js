@@ -1,18 +1,20 @@
-"use strict"
+//'use strict'
+
+import IntCoordinate from './intCoordinate.js';
 
 /**
  * Osztály a canvas elem API-jának absztrahálására.
  */
 export default class CanvasWrapper {
-    constructor(width, height, canvasId, ctxDimension) {
+    constructor(width, height, canvasDOMElement) {
         this.width = width;
         this.height = height;
-        this._canvas = document.querySelector(`#${canvasId}`);
+        this._canvas = canvasDOMElement;
 
         this._canvas.width = this.width;
         this._canvas.height = this.height;
 
-        this._ctx = this._canvas.getContext(ctxDimension);
+        this._ctx = this._canvas.getContext('2d');
         this._scene = [];
 
         this.createRect.bind(this);
@@ -28,28 +30,34 @@ export default class CanvasWrapper {
      * @param {*} height 
      * @param {*} color 
      */
-    createRect(posX = 0, posY = 0, width = 0, height = 0, color = 'black') {
+    createRect(posX = 0, posY = 0, width = 10, height = 10, color = 'black', zindex = 0) {
         const rect = {
-            canvasObjectType: 'rect',
+            type: 'rect',
             width,
             height,
-            posX,
-            posY,
-            color
+            position: {
+                x: posX,
+                y: posY
+            },
+            color,
+            zindex
         };
         this._scene.push(rect);
         return rect;
     }
 
-    createCircle(posX = 0, posY = 0, radius = 0, color = 'black') {
+    createCircle(posX = 0, posY = 0, radius = 5, color = 'black', zindex = 0) {
         const circle = {
-            canvasObjectType: 'circle',
+            type: 'circle',
             radius,
-            starAngle: 0,
-            endAndge: 2 * Math.PI,
-            posX,
-            posY,
-            color
+            startAngle: 0,
+            endAngle: 2 * Math.PI,
+            position: {
+                x: posX,
+                y: posY
+            },
+            color,
+            zindex
         };
         this._scene.push(circle);
         return circle;
@@ -61,61 +69,60 @@ export default class CanvasWrapper {
      */
     drawRect(rect) {
         if (typeof rect === 'object' && rect !== null) {
-            if (rect.canvasObjectType === 'rect') {
+            if (rect.type == 'rect') {
                 this._ctx.fillStyle = rect.color;
-                this._ctx.fillRect(rect.posX, rect.posY, rect.width, rect.height);
-            } else {
-                console.error('Object given is not a rect: ', rect);
+                this._ctx.fillRect(rect.position.x, rect.position.y, rect.width, rect.height);
+                return true;
             }
-        } else {
-            console.error('Given rect is not an objet or was null: ', rect);
+            return false;
         }
+        return false;
     }
 
-    drawCircle(circle){
+    drawCircle(circle) {
+
         if (typeof circle === 'object' && circle !== null) {
-            if (circle.canvasObjectType === 'circle') {
+            if (circle.type === 'circle') {
+
                 this._ctx.fillStyle = circle.color;
                 this._ctx.beginPath();
-                this._ctx.arc(circle.posX, circle.posY, circle.radius, circle.starAngle, circle.endAndge, false);
+                this._ctx.arc(circle.position.x, circle.position.y, circle.radius, circle.startAngle, circle.endAngle);
                 this._ctx.closePath();
                 this._ctx.fill();
-            } else {
-                console.error('Object given is not a circle: ', circle);
+                return true;
             }
-        } else {
-            console.error('Given circle is not an objet or was null: ', circle);
+            return false;
         }
+        return false;
     }
 
     /**
      * Színtér kirajzolása
      */
     renderScene() {
+
         this._ctx.clearRect(0, 0, this.width, this.height);
-        for (let object of this._scene) {
-            if (this.isCanvasObject(object)) {
-                //Hívandó függvény eldöntése
-                    switch(object.canvasObjectType){
-                      case 'rect':
-                        this.drawRect(object);
-                        break;
-                      case 'circle':
-                        this.drawCircle(object);
-                        break;
-                }
-            } else {
-                console.warn('Was not a canvasObject: ', object)
-                continue;
+        let zBufferedScene = this.sortSceneByZIndex(this._scene);
+        for (let object of zBufferedScene) {
+            switch (object.type) {
+                case 'rect':
+                    this.drawRect(object);
+                    break;
+                case 'circle':
+                    this.drawCircle(object);
+                    break;
             }
         }
     }
 
-    isCanvasObject(object) {
-        return (object.canvasObjectType !== void 0);
+    clearScene() {
+        this._scene = [];
     }
 
-    clearScene(){
-        this._scene = [];
+    sortSceneByZIndex(scene) {
+        let zBufferedScene = scene.sort((z1, z2) => {
+            return z1 > z2
+        });
+        return zBufferedScene;
     }
 }

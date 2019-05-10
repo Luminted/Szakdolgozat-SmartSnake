@@ -1,117 +1,160 @@
-import Model from '../model.js';
-import config from '../../config/config.json';
-import configError from '../errors/ConfigError.js';
-import LeftTurnCommand from '../Commands/LeftTurnCommand';
-import RightTurnCommand from '../Commands/RightTurnCommand';
-import DownTurnCommand from '../Commands/DownTurnCommand';
-import UpTurnCommand from '../Commands/UpTurnCommand';
+import Model from '../../model.js';
+import LeftTurnCommand from '../../Commands/LeftTurnCommand';
+import RightTurnCommand from '../../Commands/RightTurnCommand';
+import DownTurnCommand from '../../Commands/DownTurnCommand';
+import UpTurnCommand from '../../Commands/UpTurnCommand';
+import IntCoordinate from '../../intCoordinate.js';
 
 import assert from 'assert';
-import IntCoordinate from '../intCoordinate.js';
+import sinon from 'sinon';
+import cloneDeep from 'lodash/cloneDeep'
+import Snake from '../../snake.js';
+import Pill from '../../pill.js';
 
 
 export default {
     "snakeTest": describe('Unit testing snake.js', function () {
-        let model = null;
+        let snakeConfig = {
+            baseLength: "1",
+            startX: "0",
+            startY: "0",
+            startDirection: 'RIGHT',
+            startVelocity: "1",
+            strategy: "AStar"
+        }
+        let pillConfig = {
+            pillValue: "1",
+            startPosX: "1",
+            startPosY: "1",
+            limitX: "2",
+            limitY: "2",
+        }
         let snake = null;
-        console.log("config", config)
+        let pill = null;
 
         beforeEach(function () {
-            model = new Model(config)
-            snake = model.getEntityList().snake;
+            snake = new Snake({}, snakeConfig);
+            pill = new Pill({}, pillConfig);
         });
-        describe('function parseConfig', function(){
-            it('should return an object with fields body: [IntCoordinates->nullPosition = false], direction: (LEFT | RIGHT | UP | DOWN), baseVelocity: integer', function(){
+        describe('function parseConfig', function () {
+            it('should return an object with fields body: [IntCoordinates->nullPosition = false], direction: (LEFT | RIGHT | UP | DOWN), baseVelocity: integer', function () {
                 let snakeConfig = {
                     startVelocity: "1",
                     baseLength: "2",
                     startX: "0",
                     startY: "0",
-                    startDirection: "RIGHT"
+                    startDirection: "RIGHT",
                 }
-                let directions = new Set(['LEFT','RIGHT','UP','DOWN']);
+                let directions = new Set(['LEFT', 'RIGHT', 'UP', 'DOWN']);
                 let parsedConfig = snake.parseConfig(snakeConfig);
                 assert.equal(parsedConfig.body == undefined, false);
                 assert.equal(parsedConfig.body instanceof Array, true);
-                for(let node of parsedConfig.body){
+                for (let node of parsedConfig.body) {
                     assert.equal(node instanceof IntCoordinate, true);
                     assert.equal(node.nullPosition, false);
                 }
                 assert.equal(Number.isInteger(parsedConfig.baseVelocity), true);
                 assert.equal(directions.has(parsedConfig.direction), true);
             });
-            it('should raise an error if the config is missing vital information', function(){
+            it('should raise an error if the config is missing vital information', function () {
                 let config1 = {
                     // startVelocity: "1",
                     baseLength: "3",
                     startX: "0",
                     startY: "0",
-                    startDirection: "RIGHT"
+                    startDirection: "RIGHT",
+                    
                 }
                 let config2 = {
                     startVelocity: "1",
                     // baseLength: "3",
                     startX: "0",
                     startY: "0",
-                    startDirection: "RIGHT"
+                    startDirection: "RIGHT",
+                    
                 }
                 let config3 = {
                     startVelocity: "1",
                     baseLength: "3",
                     // startX: "0",
                     startY: "0",
-                    startDirection: "RIGHT"
+                    startDirection: "RIGHT",
+                    
                 }
                 let config4 = {
                     startVelocity: "1",
                     baseLength: "3",
                     startX: "0",
                     // startY: "0",
-                    startDirection: "RIGHT"
+                    startDirection: "RIGHT",
+                    
                 }
                 let config5 = {
                     startVelocity: "1",
                     baseLength: "3",
                     startX: "0",
                     startY: "0",
-                    // startDirection: "RIGHT"
+                    // startDirection: "RIGHT",
+                    
                 }
+
                 //TODO: check for custom error
-                assert.throws(function() {snake.parseConfig(config1)},Error);
-                assert.throws(function() {snake.parseConfig(config2)},Error);
-                assert.throws(function() {snake.parseConfig(config3)},Error);
-                assert.throws(function() {snake.parseConfig(config4)},Error);
-                assert.throws(function() {snake.parseConfig(config5)},Error);
+                assert.throws(function () {
+                    snake.parseConfig(config1)
+                }, Error);
+                assert.throws(function () {
+                    snake.parseConfig(config2)
+                }, Error);
+                assert.throws(function () {
+                    snake.parseConfig(config3)
+                }, Error);
+                assert.throws(function () {
+                    snake.parseConfig(config4)
+                }, Error);
+                assert.throws(function () {
+                    snake.parseConfig(config5)
+                }, Error);
+
             });
-            it('should not raise an error with a proper config', function(){
+            it('should not raise an error with a proper config', function () {
                 let config = {
                     startVelocity: "1",
                     baseLength: "3",
                     startX: "0",
                     startY: "0",
-                    startDirection: "RIGHT"
+                    startDirection: "RIGHT",
                 }
-                assert.doesNotThrow(function() {snake.parseConfig(config)}, Error);
+                assert.doesNotThrow(function () {
+                    snake.parseConfig(config)
+                }, Error);
             })
 
         });
         describe('function eat', function () {
-            it('snake should grow the appropriate amount after eating food', function () {
+            it('should return a list of nodes which length is equal to the given argument. Nodes should have the same coordinates as the last node ', function () {
                 let foodValue = 3;
-                let originalLength = snake.body.length;
-                snake.eat(foodValue);
-                let newLength = snake.body.length;
-
-                assert.equal(newLength, originalLength + foodValue);
+                let lastNode = snake.body[snake.bodyLength - 1];
+                let additionalNodes = snake.eat(foodValue);
+                for(let node of additionalNodes){
+                    assert.deepEqual(node, lastNode);
+                }
+                assert.equal(additionalNodes.length, foodValue);
             });
+            it('should not change the inner state of Snake', function(){
+                let originalState = cloneDeep(snake.state);
+                let foodValue = 3;
+                snake.eat(foodValue);
+                let newState = snake.state;
+                assert.deepEqual(originalState, newState);
+            })
         });
         describe('function calculateCommand', function () {
             it('it should return LeftTurnCommand', function () {
                 snake.setState({
                     direction: "UP",
                 });
-                let from = new IntCoordinate(15,15);
-                let to = new IntCoordinate(14,15);
+                let from = new IntCoordinate(15, 15);
+                let to = new IntCoordinate(14, 15);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -123,9 +166,9 @@ export default {
                 snake.setState({
                     direction: "RIGHT",
                 });
-                let from = new IntCoordinate(15,15);
+                let from = new IntCoordinate(15, 15);
 
-                let to = new IntCoordinate(14,15);
+                let to = new IntCoordinate(14, 15);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -137,8 +180,8 @@ export default {
                 snake.setState({
                     direction: "UP",
                 });
-                let from = new IntCoordinate(15,15);
-                let to = new IntCoordinate(16,15);
+                let from = new IntCoordinate(15, 15);
+                let to = new IntCoordinate(16, 15);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -150,9 +193,9 @@ export default {
                 snake.setState({
                     direction: "LEFT",
                 });
-                let from = new IntCoordinate(15,15);
+                let from = new IntCoordinate(15, 15);
 
-                let to = new IntCoordinate(14,15);
+                let to = new IntCoordinate(14, 15);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -164,8 +207,8 @@ export default {
                 snake.setState({
                     direction: "RIGHT",
                 });
-                let from = new IntCoordinate(15,15);
-                let to = new IntCoordinate(15,14);
+                let from = new IntCoordinate(15, 15);
+                let to = new IntCoordinate(15, 14);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -177,21 +220,21 @@ export default {
                 snake.setState({
                     direction: "DOWN",
                 });
-                let from = new IntCoordinate(15,15);
-                let to = new IntCoordinate(15,14);
+                let from = new IntCoordinate(15, 15);
+                let to = new IntCoordinate(15, 14);
 
                 let command = snake.calculateCommand(from, to);
 
                 assert.equal(snake.direction, "DOWN");
                 assert.equal(command instanceof UpTurnCommand, false);
             });
-
+            
             it('it should return DownTurnCommand', function () {
                 snake.setState({
                     direction: "RIGHT",
                 });
-                let from = new IntCoordinate(15,15);
-                let to = new IntCoordinate(15,16);
+                let from = new IntCoordinate(15, 15);
+                let to = new IntCoordinate(15, 16);
 
                 let command = snake.calculateCommand(from, to);
 
@@ -203,18 +246,24 @@ export default {
                 snake.setState({
                     direction: "UP",
                 });
-                let from = new IntCoordinate(15,15);
-                let to = new IntCoordinate(15,16);
+                let from = new IntCoordinate(15, 15);
+                let to = new IntCoordinate(15, 16);
 
                 let command = snake.calculateCommand(from, to);
 
                 assert.equal(snake.direction, "UP");
                 assert.equal(command instanceof DownTurnCommand, false);
             });
+            it('should return undefined if from and to are the same positions', function(){
+                let from = new IntCoordinate(15,15);
+                let to = new IntCoordinate(15,15);
+                let command = snake.calculateCommand(from, to);
+                assert.equal(command, undefined);
+            })
         });
         describe("function calculateNextHead", function () {
             it('should return new IntCoordinate with position x=16, y=15', function () {
-                let head = new IntCoordinate(15,15);
+                let head = new IntCoordinate(15, 15);
 
                 let velocityX = 1;
                 let velocityY = 0;
@@ -226,19 +275,19 @@ export default {
                 assert.equal(nextHead.coordinates.y, head.coordinates.y + velocityY);
             });
             it('should return head with position x=15, y=16', function () {
-                let head = new IntCoordinate(15,15);
- 
+                let head = new IntCoordinate(15, 15);
+
                 let velocityX = 0;
                 let velocityY = 1;
                 snake.setState({
                     body: [head]
                 });
-                let nextHead = snake.calculateNextHead(velocityX, velocityY)                
+                let nextHead = snake.calculateNextHead(velocityX, velocityY)
                 assert.equal(nextHead.coordinates.x, head.coordinates.x + velocityX);
                 assert.equal(nextHead.coordinates.y, head.coordinates.y + velocityY);
             });
-            it('should return an new IntCoordinate',function(){
-                let head = new IntCoordinate(15,15);
+            it('should return an new IntCoordinate', function () {
+                let head = new IntCoordinate(15, 15);
                 let velocityX = 0;
                 let velocityY = 1;
                 snake.setState({
@@ -251,52 +300,35 @@ export default {
 
         describe("function reset", function () {
             it("should reset game state of snake to values defined in it's config and constructor", function () {
-                let config = snake.config;
-                let state = snake.state;
-                let parsedConfig = snake.parseConfig(config);
+                let snakeConfig = snake.config;
+                let initialState = snake.state;
+                let parsedConfig = snake.parseConfig(snakeConfig);
 
                 //scrambling state
                 let nextState = {
-                    command: new LeftTurnCommand(),
-                    tmpDirection: "TEST",
-                    velocityX: "TEST",
-                    velocityY: "TEST",
+                    velocity: {
+                        x: 'TEST',
+                        y: 'TEST'
+                    },
                     status: "TEST",
                 }
-
-                for (let key in Object.keys(parsedConfig)) {
-                    nextState[key] = "TEST";
-                }
-
 
                 snake.setState(nextState);
                 snake.reset();
 
-                //initial state check
-                assert.equal(state.command, undefined);
-                assert.equal(state.tmpDirection, undefined);
-                assert.equal(state.status, "ALIVE");
-
-                //config check
-                for (let key in Object.keys.parsedConfig) {
-                    if (key == "body") {
-                        assert.deepEqual(state.body, parsedConfig.body);
-                    } else {
-                        assert.equal(state[key], parsedConfig[key]);
-                    }
-                }
+                assert.deepEqual(snake.state, Object.assign(initialState, parsedConfig));
 
             });
         });
-        describe('function isAlive', function(){
-            it('should return ALIVE', function(){
+        describe('function isAlive', function () {
+            it('should return ALIVE', function () {
                 snake.setState({
                     status: 'ALIVE'
                 });
                 let isALive = snake.isAlive();
                 assert.equal(isALive, true);
             });
-            it('should return DEAD', function(){
+            it('should return DEAD', function () {
                 snake.setState({
                     status: 'DEAD'
                 });
@@ -304,55 +336,53 @@ export default {
                 assert.equal(isALive, false);
             });
         })
-        describe('function onNotify', function () {
-            it('Notification: PILL_COLLISION. Should call eat function.', function () {
-                let originalLength = snake.bodyLength;
-                let notification = {
-                    type: 'PILL_COLLISION',
-                    nourishment: 2
+        describe('function storeNotification', function () {
+            it('should add given object to the end of buffer, if valid, and return true', function () {
+                let notification1 = {
+                    type: 'TEST1',
+                    payload: {
+                        entity: 'TEST1'
+                    }
                 }
-                snake.onNotify(null, notification);
-                assert.equal(snake.bodyLength, originalLength + notification.nourishment);
-            });
-            it('Notification: WALL_COLLISION. Should set status to DEAD', function () {
-                let notification = {
-                    type: 'WALL_COLLISION'
+                let notification2 = {
+                    type: 'TEST2',
+                    payload: {
+                        entity: 'TEST2'
+                    }
                 }
-                snake.onNotify(null, notification);
-
-                assert.equal(snake.status, 'DEAD');
+                let returnValue;
+                returnValue = snake.storeNotification(notification1);
+                assert.equal(returnValue, true);
+                returnValue = snake.storeNotification(notification2);
+                assert.equal(returnValue, true);
+                let startOfBuffer = snake.state.notificationBuffer[0];
+                assert.deepEqual(startOfBuffer, notification2);
             });
-            it('Notification: BODY_COLLISION. Should set status to DEAD', function () {
+            it('should not add object to notificationBuffer if it has no field type and should return false', function () {
                 let notification = {
-                    type: 'BODY_COLLISION'
+                    payload: {
+                        entity: 'TEST'
+                    }
                 }
-                snake.onNotify(null, notification);
-
-                assert.equal(snake.status, 'DEAD');
+                let returnValue = snake.storeNotification(notification);
+                assert.equal(returnValue, false);
+                assert.deepEqual(snake.state.notificationBuffernotification, undefined);
             });
-            it('Notification: TARGET_REACHED. Should set target to position of pill.', function () {
-                let pill = model.getEntityList().pill;
-                snake.setState({
-                    target: new IntCoordinate(15,15)
-                });
-                pill.setState({
-                    position: new IntCoordinate(16,16)
-                });
+            it('should not add object to notificationBuffer if it has no field payload and should return false', function () {
                 let notification = {
-                    type: 'TARGET_REACHED'
+                    type: 'TEST'
                 }
-                snake.onNotify(null, notification);
-
-                assert.equal(snake.target.coordinates.x, pill.position.coordinates.x);
-                assert.equal(snake.target.coordinates.y, pill.position.coordinates.y);
-            });
-        });
-        describe('function move', function(){
-            it('should move head of snake by 1 to the right', function(){
+                let returnValue = snake.storeNotification(notification);
+                assert.equal(returnValue, false);
+                assert.deepEqual(snake.state.notificationBuffernotification, undefined);
+            })
+        })
+        describe('function move', function () {
+            it('should move head of snake by velocityX to the right', function () {
                 let velocityX = 1;
                 let velocityY = 0;
                 snake.setState({
-                    body: [new IntCoordinate(1,1)],
+                    body: [new IntCoordinate(1, 1)],
                 })
                 let originalHeadX = snake.head.coordinates.x;
                 let originalHeadY = snake.head.coordinates.y;
@@ -360,11 +390,11 @@ export default {
                 assert.equal(nextBody[0].coordinates.x, originalHeadX + velocityX);
                 assert.equal(nextBody[0].coordinates.y, originalHeadY + velocityY);
             });
-            it('should move head of snake by 1 to the left', function(){
+            it('should move head of snake by velocityX to the left', function () {
                 let velocityX = -1;
                 let velocityY = 0;
                 snake.setState({
-                    body: [new IntCoordinate(1,1)],
+                    body: [new IntCoordinate(1, 1)],
                 })
                 let originalHeadX = snake.head.coordinates.x;
                 let originalHeadY = snake.head.coordinates.y;
@@ -372,11 +402,11 @@ export default {
                 assert.equal(nextBody[0].coordinates.x, originalHeadX + velocityX);
                 assert.equal(nextBody[0].coordinates.y, originalHeadY + velocityY);
             });
-            it('should move head of snake by 1 upward', function(){
+            it('should move head of snake by velocityY upward', function () {
                 let velocityX = 0;
                 let velocityY = -1;
                 snake.setState({
-                    body: [new IntCoordinate(1,1)],
+                    body: [new IntCoordinate(1, 1)],
                 })
                 let originalHeadX = snake.head.coordinates.x;
                 let originalHeadY = snake.head.coordinates.y;
@@ -384,11 +414,11 @@ export default {
                 assert.equal(nextBody[0].coordinates.x, originalHeadX + velocityX);
                 assert.equal(nextBody[0].coordinates.y, originalHeadY + velocityY);
             });
-            it('should move head of snake by 1 down', function(){
+            it('should move head of snake by velocityY down', function () {
                 let velocityX = 0;
                 let velocityY = 1;
                 snake.setState({
-                    body: [new IntCoordinate(1,1)],
+                    body: [new IntCoordinate(1, 1)],
                 })
                 let originalHeadX = snake.head.coordinates.x;
                 let originalHeadY = snake.head.coordinates.y;
@@ -397,124 +427,145 @@ export default {
                 assert.equal(nextBody[0].coordinates.y, originalHeadY + velocityY);
             });
         });
-        describe('function handleInput', function(){
-            it('should set state.tmpDirection to LEFT', function(){
+        describe('function handleInput', function () {
+            it('should return "LEFT"', function () {
                 snake.setState({
                     direction: 'UP',
-                    tmpDirection: undefined
                 });
                 let direction = 'LEFT';
-                snake.handleInput(direction);
+                let handledInput = snake.handleInput(direction);
                 assert.equal(snake.isOppositeDirection(direction), false);
-                assert.equal(snake.state.tmpDirection, 'LEFT');
+                assert.equal(handledInput, 'LEFT');
             });
-            it('should set state.tmpDirection to RIGHT', function(){
+            it('should return "RIGHT"', function () {
                 snake.setState({
                     direction: 'UP',
-                    tmpDirection: undefined
                 });
                 let direction = 'RIGHT';
-                snake.handleInput(direction);
+                let handledInput = snake.handleInput(direction);
                 assert.equal(snake.isOppositeDirection(direction), false);
-                assert.equal(snake.state.tmpDirection, 'RIGHT');
+                assert.equal(handledInput, 'RIGHT');
             });
-            it('should set state.tmpDirection to UP', function(){
+            it('should return "UP"', function () {
                 snake.setState({
                     direction: 'LEFT',
-                    tmpDirection: undefined
                 });
                 let direction = 'UP';
-                snake.handleInput(direction);
+                let handledInput = snake.handleInput(direction);
                 assert.equal(snake.isOppositeDirection(direction), false);
-                assert.equal(snake.state.tmpDirection, 'UP');
+                assert.equal(handledInput, 'UP');
             });
-            it('should set state.tmpDirection to DOWN', function(){
+            it('should return "DOWN"', function () {
                 snake.setState({
                     direction: 'LEFT',
-                    tmpDirection: undefined
                 });
                 let direction = 'DOWN';
-                snake.handleInput(direction);
+                let handledInput = snake.handleInput(direction);
                 assert.equal(snake.isOppositeDirection(direction), false);
-                assert.equal(snake.state.tmpDirection, 'DOWN');
+                assert.equal(handledInput, 'DOWN');
             });
+            it('should return undefined if isOppositeDirection returns true', function () {
+                snake.setState({
+                    direction: 'LEFT'
+                })
+                let direction = 'RIGHT';
+                let handleInput = snake.handleInput(direction);
+                assert.equal(handleInput, undefined);
+            })
         });
-        describe('function isOppositeDirection', function(){
-            it('Snake direction: UP, input direction: DOWN', function(){
+        describe('function isOppositeDirection', function () {
+            it('should return false if snake.state.direction is undefined', function () {
+                snake.setState({
+                    direction: undefined
+                })
+                let directions = ['LEFT', 'RIGHT', 'UP', 'DOWN'];
+                let isOpposite = false;
+                for (let direction of directions) {
+                    isOpposite = isOpposite || snake.isOppositeDirection(direction);
+                }
+                assert.equal(isOpposite, false);
+            })
+            it('Snake direction: UP, input direction: DOWN', function () {
                 snake.setState({
                     direction: 'UP'
                 });
                 let direction = 'DOWN';
                 assert.equal(snake.isOppositeDirection(direction), true);
             });
-            it('Snake direction: DOWN, input direction: UP', function(){
+            it('Snake direction: DOWN, input direction: UP', function () {
                 snake.setState({
                     direction: 'DOWN'
                 });
                 let direction = 'UP';
                 assert.equal(snake.isOppositeDirection(direction), true);
             });
-            it('Snake direction: LEFT, input direction: RIGHT', function(){
+            it('Snake direction: LEFT, input direction: RIGHT', function () {
                 snake.setState({
                     direction: 'LEFT'
                 });
                 let direction = 'RIGHT';
                 assert.equal(snake.isOppositeDirection(direction), true);
             });
-            it('Snake direction: RIGHT, input direction: LEFT', function(){
+            it('Snake direction: RIGHT, input direction: LEFT', function () {
                 snake.setState({
                     direction: 'RIGHT'
                 });
                 let direction = 'LEFT';
                 assert.equal(snake.isOppositeDirection(direction), true);
             });
-            it('Snake direction: UP, input directions: UP, LEFT, RIGHT', function(){
+            it('Snake direction: UP, input directions: UP, LEFT, RIGHT', function () {
                 snake.setState({
                     direction: 'UP'
                 });
                 let directions = ['LEFT', 'UP', 'RIGHT'];
                 let isOpposite = false;
-                for(let direction of directions){
+                for (let direction of directions) {
                     isOpposite = isOpposite || snake.isOppositeDirection(direction);
                 }
                 assert.equal(isOpposite, false);
             });
-            it('Snake direction: DOWN, input directions: DOWN, LEFT, RIGHT', function(){
+            it('Snake direction: DOWN, input directions: DOWN, LEFT, RIGHT', function () {
                 snake.setState({
                     direction: 'DOWN'
                 });
                 let directions = ['DOWN', 'LEFT', 'RIGHT'];
                 let isOpposite = false;
-                for(let direction of directions){
+                for (let direction of directions) {
                     isOpposite = isOpposite || snake.isOppositeDirection(direction);
                 }
                 assert.equal(isOpposite, false);
             });
-            it('Snake direction: LEFT, input directions: LEFT, UP, DOWN', function(){
+            it('Snake direction: LEFT, input directions: LEFT, UP, DOWN', function () {
                 snake.setState({
                     direction: 'LEFT'
                 });
                 let directions = ['LEFT', 'UP', 'DOWN'];
                 let isOpposite = false;
-                for(let direction of directions){
+                for (let direction of directions) {
                     isOpposite = isOpposite || snake.isOppositeDirection(direction);
                 }
                 assert.equal(isOpposite, false);
             });
-            it('Snake direction: RIGHT, input directions: RIGHT, UP, DOWN', function(){
+            it('Snake direction: RIGHT, input directions: RIGHT, UP, DOWN', function () {
                 snake.setState({
                     direction: 'RIGHT'
                 });
                 let directions = ['RIGHT', 'UP', 'DOWN'];
                 let isOpposite = false;
-                for(let direction of directions){
+                for (let direction of directions) {
                     isOpposite = isOpposite || snake.isOppositeDirection(direction);
                 }
                 assert.equal(isOpposite, false);
             });
         });
-        describe('function calculateVelocity', function(){
-            it('should return an object with fields x and y for every possible direction', function(){
+        describe('function die', function () {
+            it('should set status of Snake to "DEAD"', function () {
+                snake.die();
+                assert.equal(snake.status, 'DEAD');
+            })
+        })
+        describe('function calculateVelocity', function () {
+            it('should return an object with fields x and y for every possible direction', function () {
                 let direction;
                 let velocityObjects = [];
 
@@ -531,12 +582,12 @@ export default {
                 direction = 'DOWN';
                 velocityObjects.push(snake.calculateVelocity(direction));
 
-                for(let velocityObject of velocityObjects){
+                for (let velocityObject of velocityObjects) {
                     assert.notEqual(velocityObject.x, undefined);
                     assert.notEqual(velocityObject.y, undefined);
                 }
             })
-            it('Calculating for direction LEFT', function(){
+            it('Calculating for direction LEFT', function () {
                 let direction = 'LEFT';
                 let baseVelocity = 1;
                 snake.setState({
@@ -547,7 +598,7 @@ export default {
                 assert.equal(velocity.x, -baseVelocity);
                 assert.equal(velocity.y, 0);
             })
-            it('Calculating for direction RIGHT', function(){
+            it('Calculating for direction RIGHT', function () {
                 let direction = 'RIGHT';
                 let baseVelocity = 1;
                 snake.setState({
@@ -558,7 +609,7 @@ export default {
                 assert.equal(velocity.x, baseVelocity);
                 assert.equal(velocity.y, 0);
             })
-            it('Calculating for direction UP', function(){
+            it('Calculating for direction UP', function () {
                 let direction = 'UP';
                 let baseVelocity = 1;
                 snake.setState({
@@ -569,7 +620,7 @@ export default {
                 assert.equal(velocity.x, 0);
                 assert.equal(velocity.y, -baseVelocity);
             })
-            it('Calculating for direction DOWN', function(){
+            it('Calculating for direction DOWN', function () {
                 let direction = 'DOWN';
                 let baseVelocity = 1;
                 snake.setState({
@@ -581,5 +632,30 @@ export default {
                 assert.equal(velocity.y, baseVelocity);
             })
         })
+        describe('Getter functions', function () {
+            describe('getter tail', function () {
+                it("should return Snakes's body without it's head", function () {
+                    let head = new IntCoordinate(0, 0);
+                    let tail = [new IntCoordinate(1, 0), new IntCoordinate(2, 0)];
+                    let body = [];
+                    // with an actual tail
+                    body.push(head, tail);
+                    snake.setState({
+                        body: body
+                    });
+                    let getterTail = snake.tail;
+                    assert.deepEqual(getterTail, [tail]);
+
+                    //with only a head
+                    snake.setState({
+                        body: [head]
+                    });
+                    getterTail = snake.tail;
+                    assert.deepEqual(getterTail, []);
+
+                });
+            })
+        })
     })
+
 }

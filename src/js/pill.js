@@ -4,30 +4,35 @@ import ConfigError from './errors/ConfigError.js';
 import IntCoordinate from './intCoordinate.js';
 import CoordinateError from './errors/IntCoordinateError';
 
+import uuidv1 from 'uuid/v1';
 
 export default class Pill extends ObserverEntity {
-    constructor(callbacks, config) {
+    constructor(callbacks, config, notifier) {
         //log.info('Initializing Pill...');
         super();
-        let board = callbacks.getEntityList().board;
         let parsedConfig = this.parseConfig(config);
-
         this.state = parsedConfig;
-        this.callbacks = callbacks;
-        this.state.limitX = board.dimensions.dimX;
-        this.state.limitY = board.dimensions.dimY;
+        this.state.ID = uuidv1();
 
-        this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
+
+        this.callbacks = callbacks;
+
+        if (notifier) {
+            notifier.subscribe(this);
+        }
     }
 
     parseConfig(config) {
-        if (config == undefined || config.pillValue == undefined || config.startPosX == undefined || config.startPosY == undefined) {
+        if (config == undefined || config.pillValue == undefined || config.startPosX == undefined || config.startPosY == undefined || config.limitX == undefined || config.limitY == undefined) {
             throw new ConfigError('Missing config or missing fields in config. Fields needed: pillValue: integer, startPosX: Integer, startPosY: Integer.');
         }
 
         let parsedConfig = {};
         parsedConfig.pillValue = Number(config.pillValue);
-        parsedConfig.position = new IntCoordinate(Number(config.startPosX),Number(config.startPosY))
+        parsedConfig.position = new IntCoordinate(Number(config.startPosX), Number(config.startPosY));
+        parsedConfig.limits = {};
+        parsedConfig.limits.x = Number(config.limitX);
+        parsedConfig.limits.y = Number(config.limitY);
         parsedConfig.config = config;
 
         return parsedConfig;
@@ -56,8 +61,7 @@ export default class Pill extends ObserverEntity {
     onNotify(entity, event) {
         switch (event.type) {
             case ('PILL_COLLISION'):
-            let snake = this.callbacks.getEntityList().snake
-                let newPosition = this.calculateNewRandomPosition(snake.body);
+                let newPosition = this.calculateNewRandomPosition();
                 this.setState({
                     position: newPosition
                 });
@@ -65,38 +69,44 @@ export default class Pill extends ObserverEntity {
         }
     }
 
-    calculateNewRandomPosition(snakeBody) {
-        let limitX = this.state.limitX;
-        let limitY = this.state.limitY;
-        if(snakeBody.length == limitX * limitY){
-            return new IntCoordinate(undefined,undefined,true); 
-        }else{
-            let xPositions = [];
-            let yPositions = [];
-            for (let i = 0; i < limitX; i++){
-                let contains = false;
-                for(let node of snakeBody){
-                    contains = contains || node.posX == i;
-                }
-                if(!contains){
-                    xPositions.push(i);
-                }
-            }
-            for (let i = 0; i < limitY; i++){
-                let contains = false;
-                for(let node of snakeBody){
-                    contains = contains || node.posY == i;
-                }
-                if(!contains){
-                    yPositions.push(i);
-                }
-            }
-            let posX = xPositions[Math.trunc(Math.random() * xPositions.length)];
-            let posY = yPositions[Math.trunc(Math.random() * yPositions.length)];
+    calculateNewRandomPosition() {
+        let limitX = this.limits.x;
+        let limitY = this.limits.x;
+        let snakes = this.callbacks.getEntityList().snakes;
+        let appendedSnakeBodies = [];
 
-            return new IntCoordinate(posX, posY);
+        for (let snake of snakes) {
+            appendedSnakeBodies.push(...snake.body);
+        }
+        if (appendedSnakeBodies.length >= limitX * limitY) {
+            return new IntCoordinate(undefined, undefined, true);
+        } else {
+            let freePositions = this.calculateFreePositions(appendedSnakeBodies);
+            let randomPosIndex = Math.trunc(Math.random() * limitX) + Math.trunc(Math.random() * limitY);
+            let randomPosition = freePositions[randomPosIndex];
+            return new IntCoordinate(randomPosition.x, randomPosition.y);
         }
 
+    }
+
+    calculateFreePositions(snakeBody) {
+        let limitX = this.limits.x;
+        let limitY = this.limits.x;
+        let positions = []
+        for (let i = 0; i < limitX; i++) {
+            for (let j = 0; j < limitY; j++) {
+                positions.push({
+                    x: i,
+                    y: j
+                });
+            }
+        }
+        for (let node of snakeBody) {
+            let index = node.coordinates.x * limitX + node.coordinates.y
+            positions.splice(index, 1);
+            positions;
+        }
+        return positions;
     }
 
     get position() {
@@ -109,5 +119,13 @@ export default class Pill extends ObserverEntity {
 
     get config() {
         return this.state.config;
+    }
+
+    get limits() {
+        return this.state.limits;
+    }
+
+    get ID(){
+        return this.state.ID;
     }
 }

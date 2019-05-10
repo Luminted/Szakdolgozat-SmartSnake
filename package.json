@@ -5,7 +5,7 @@
   "main": "./src/js/main.js",
   "scripts": {
     "serve": "RUN_ENV=browser node env.js; nodemon ./server.js --config nodemon.json",
-    "test": "RUN_ENV=test node env.js; npx mocha --require babel-core/register ./src/js/tests/index.js",
+    "test": "RUN_ENV=test node env.js; npx mocha --require babel-core/register ./src/js/tests/**/index.js",
     "setenv": "RUN_ENV=test node env.js"
   },
   "repository": {
@@ -33,6 +33,7 @@
     "loglevel": "^1.5.0",
     "mainloop.js": "^1.0.4",
     "mocha": "^6.1.2",
+    "uuid": "^3.3.2",
     "webpack": "^3.4.1",
     "webpack-dev-server": "^2.6.1"
   },

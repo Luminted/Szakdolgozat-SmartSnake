@@ -1,37 +1,44 @@
 //'use strict'
 
 import ObserverEntity from './AbstractClasses/ObserverEntity';
-import cloneDeep from 'lodash/cloneDeep';
 import ConfigError from './errors/ConfigError.js';
-
-import AStart from './pathfinding-algorithms/AStar';
-
 import LeftTurnCommand from './Commands/LeftTurnCommand';
 import RightTurnCommand from './Commands/RightTurnCommand';
 import DownTurnCommand from './Commands/DownTurnCommand';
 import UpTurnCommand from './Commands/UpTurnCommand';
 import IntCoordinate from './intCoordinate';
 
+import cloneDeep from 'lodash/cloneDeep';
+import uuidv1 from 'uuid/v1';
+
 export default class Snake extends ObserverEntity {
-    constructor(callbacks, config){
+    constructor(callbacks, config, strategy, notifier) {
 
         super();
-        let parsedConfig = this.parseConfig(config)
         this.state = {}
+        this.state.ID = uuidv1();
         this.callbacks = callbacks;
+        let parsedConfig = this.parseConfig(config)
         this.state.command = void 0;
-        this.state.tmpDirection = void 0;
+        this.state.velocity = {
+            x: 0,
+            y: 0
+        }
+        this.state.notificationBuffer = [];
         this.state.status = "ALIVE";
         this.state.config = config;
+        this.state.strategy = strategy;
+        this.state.path = [];
         Object.assign(this.state, parsedConfig);
 
-        this.callbacks.getSubjectSubscribeFunctions().physics.subscribe(this);
-
-        //log.info('Snake initialized ', this.state);
+        this.notifier = notifier;
+        if(notifier){
+            notifier.subscribe(this);
+        }
     }
 
     parseConfig(config) {
-        if(config.startDirection == undefined || config.startVelocity == undefined || config.startX == undefined || config.startY == undefined || config.baseLength == undefined){
+        if (config.startDirection == undefined || config.startVelocity == undefined || config.startX == undefined || config.startY == undefined || config.baseLength == undefined) {
             throw new ConfigError('Missing fields in configuration. Needed fields: startdirection: (LEFT | RIGHT | UP | DOWN), startVelocity: integer, startX: integer, startY:integer, baseLength: integer');
         }
         let parsedConfig = {}
@@ -45,57 +52,59 @@ export default class Snake extends ObserverEntity {
     }
 
     update() {
-        if (this.state.status === 'ALIVE') {
-            let nextState = cloneDeep(this.state);
-            let pill = this.callbacks.getEntityList().pill;
-            let board = this.callbacks.getEntityList().board;
-            let path;
+        let nextState = {};
+        let nextDirection;
+        let nextVelocity;
+        let nextBody;
+        let commandResult;
+        let nextStep;
+        let path;
+        let command;
+        let notifier = this.notifier;
 
-            if (!this.target) {
-                nextState.target = pill.position
-            }
-            if(this.target){
-                path = AStart(this.head, this.target, board);
-            }
+        if(this.state.strategy && this.state.strategy.pathfinder){
+            path = this.calculatePath();
+            command = this.calculateCommand(this.head, path[0]);
 
-            if (path && path.length > 1) {
-                let nextCommand = this.calculateCommand(this.head, path[path.length - 2]);
-                this.setState({
-                    command: nextCommand
-                })
-            }
+        }
+        command = command || this.state.command;
+        if(command){
+            commandResult = command.execute(this);
+        }
 
-            if (this.state.command) {
-                this.state.command.execute(this);
-                nextState.command = void 0;
-            }
-
-            if (this.state.tmpDirection && !this.isOppositeDirection(this.state.tmpDirection)) {
-                nextState.direction = this.state.tmpDirection;
-                //TODO: This feels hacky. Look at is later!
-                nextState.tmpDirection = void 0;
-            }
-
-            let nextVelocity = this.calculateVelocity(nextState.direction);
-            let nextBody = this.move(nextVelocity.x, nextVelocity.y);
-
-            nextState.body = nextBody;
-
+        nextDirection = commandResult || this.direction;
+        nextVelocity = this.calculateVelocity(nextDirection);
+        nextBody = this.move(nextVelocity.x, nextVelocity.y);
+        nextStep = nextBody[0];
+        if(notifier){
+            notifier.calculateStepCollisionType(nextStep);
+        }
+        Object.assign(nextState, {
+            direction: nextDirection,
+            body: nextBody,
+            velocity: nextVelocity,
+            path: path
+        });
+        let notificationBuffer = this.state.notificationBuffer;
+        let notification = notificationBuffer.pop();
+        while(notification){
+            this.processNotification(notification,nextState);
+            notification = notificationBuffer.pop();
+        }
+        if (this.isAlive()) {
             this.setState(nextState);
         }
-        if (this.state.status === 'DEAD') {
-            log.info('SNAKE IS DEAD');
-        }
     }
+
 
     reset() {
         let parsedConfig = this.parseConfig(this.config);
         let nextState = {
-         command: void 0,
-         tmpDirection: void 0,
-         velocityY: 0,
-         velocityX: 0,
-         status: "ALIVE"
+            velocity: {
+                x: 0,
+                y: 0
+            },
+            status: "ALIVE"
         }
         Object.assign(nextState, parsedConfig);
         this.setState(nextState);
@@ -109,36 +118,89 @@ export default class Snake extends ObserverEntity {
         } else {
             let position = targetObject.position;
             this.setState({
-                target: {
-                    posX: position.posX,
-                    posY: position.posY
-                }
+                target: position
             });
         }
     }
 
+    die() {
+        this.setState({
+            status: 'DEAD'
+        })
+    }
+
     onNotify(entity, event) {
-        switch (event.type) {
+        let eventType = event.type
+        switch (eventType) {
             case ('PILL_COLLISION'):
-                this.eat(event.nourishment);
+                {
+                    let storedNotification = {
+                        type: eventType,
+                        payload: {
+                            entity: entity
+                        }
+                    }
+                    this.storeNotification(storedNotification);
+                    break;
+                }
+            case ('WALL_COLLISION'):
+                {
+                    let storedNotification = {
+                        type: eventType,
+                        payload: {
+                            entity: entity
+                        }
+                    }
+                    this.storeNotification(storedNotification);
+                    break;
+                }
+            case ('BODY_COLLISION'):
+                {
+                    let storedNotification = {
+                        type: eventType,
+                        payload: {
+                            entity: entity
+                        }
+                    }
+                    this.storeNotification(storedNotification);
+
+                    break;
+                }
+            case ('TARGET_REACHED'):
+                {
+                    let storedNotification = {
+                        type: eventType,
+                        payload: {
+                            entity: entity
+                        }
+                    }
+                    this.storeNotification(storedNotification);
+                    break;
+                }
+        }
+    }
+
+    processNotification(notification, nextState) {
+        let notificationResult = {};
+        let payload = notification.payload
+        switch (notification.type) {
+            case ('PILL_COLLISION'):
+                let result = this.eat(payload.entity.pillValue);
+                nextState.body.push(...result);
                 break;
             case ('WALL_COLLISION'):
-                this.setState({
-                    status: 'DEAD'
-                });
+                this.die();
                 break;
             case ('BODY_COLLISION'):
-                this.setState({
-                    status: 'DEAD'
-                });
+                this.die();
                 break;
             case ('TARGET_REACHED'):
-                let pill = this.callbacks.getEntityList().pill;
-                let newTarget = pill.position;
-                this.setState({
-                    target: newTarget
-                })
+                let strategy = this.state.strategy; 
+                if(strategy && strategy.targetSetter){
+                    strategy.targetSetter(this);
+                }
         }
+        return notificationResult;
     }
 
     setState(options) {
@@ -150,24 +212,32 @@ export default class Snake extends ObserverEntity {
 
     handleInput(direction) {
         if (!this.isOppositeDirection(direction)) {
-            this.setState({
-                tmpDirection: direction
-            })
+            return direction;
         }
+        return undefined;
     }
 
     move(velocityX, velocityY) {
         let nextBody = cloneDeep(this.body);
 
         nextBody.pop();
-        nextBody.unshift(this.calculateNextHead(velocityX, velocityY));
+        let nextHead = this.calculateNextHead(velocityX, velocityY)
+        nextBody.unshift(nextHead);
 
         return nextBody;
     }
 
+    storeNotification(notification) {
+        if (notification.type == undefined || notification.payload == undefined) {
+            return false;
+        } else {
+            this.state.notificationBuffer.unshift(notification);
+            return true;
+        }
+    }
+
     calculateVelocity(direction) {
         let nextVelocity = {};
-        //TODO: rename pos to vel
         switch (direction) {
             case 'RIGHT':
                 nextVelocity.x = this.state.baseVelocity;
@@ -194,7 +264,7 @@ export default class Snake extends ObserverEntity {
         let nextPosX = head.coordinates.x + velocityX;
         let nextPosY = head.coordinates.y + velocityY;
 
-        return new IntCoordinate(nextPosX,nextPosY);
+        return new IntCoordinate(nextPosX, nextPosY);
     }
 
     calculateCommand(from, to) {
@@ -216,25 +286,25 @@ export default class Snake extends ObserverEntity {
         if (fromY - toY < 0 && !(currDirection == 'UP')) {
             return new DownTurnCommand();
         }
+        return undefined
     }
 
     eat(gain) {
-        let nextBody = cloneDeep(this.body);
-
-        let tailNode = nextBody[this.bodyLength - 1];
+        let additionalNodes = [];
+        let tailNode = this.body[this.bodyLength - 1];
+        let tailNodeCoordinates = tailNode.coordinates;
 
         for (let i = 0; i < gain; i++) {
-            nextBody.push({
-                posX: tailNode.posX,
-                posY: tailNode.posY
-            });
+            additionalNodes.push(new IntCoordinate(tailNodeCoordinates.x, tailNodeCoordinates.y));
         }
 
-        this.setState({
-            body: nextBody
-        });
+        return additionalNodes;
     }
 
+    calculatePath() {
+        let path = this.state.strategy.pathfinder();
+        return path;
+    }
 
     isOppositeDirection(direction) {
         if (this.state.direction === 'RIGHT' && direction === 'LEFT') {
@@ -253,8 +323,12 @@ export default class Snake extends ObserverEntity {
         return this.state.status === 'ALIVE';
     }
 
-    get bodyLength(){
+    get bodyLength() {
         return this.state.body.length;
+    }
+
+    get endOfBody() {
+        return this.body[this.bodyLength - 1];
     }
 
     get body() {
@@ -272,15 +346,23 @@ export default class Snake extends ObserverEntity {
     get direction() {
         return this.state.direction;
     }
+    get status() {
+        return this.state.status;
+    }
+
+    get config() {
+        return this.state.config;
+    }
 
     get target() {
         return this.state.target;
     }
 
-    get config(){
-        return this.state.config;
+    get tail() {
+        return this.body.slice(1);
     }
-    get status(){
-        return this.state.status;
+
+    get ID(){
+        return this.state.ID;
     }
 }

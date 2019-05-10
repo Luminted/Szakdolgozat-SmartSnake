@@ -1,6 +1,7 @@
+import IntCoordinate from '../intCoordinate.js';
 export default function AStar(start, goal, board) {
     let closedSet = new Set();
-    let openSet = new Set([start.posX + ',' + start.posY]);
+    let openSet = new Set([start.coordinates.x + ',' + start.coordinates.y]);
     let cameFrom = {}
     let gScore = {}
     let fScore = {}
@@ -11,26 +12,24 @@ export default function AStar(start, goal, board) {
             let status = board.getTileByPosition(i, j).status;
             gScore[i + ',' + j] = {
                 score: Infinity,
-                posX: i,
-                posY: j,
+                position: new IntCoordinate(i,j),
                 status: status
             }
             fScore[i + ',' + j] = {
                 score: Infinity,
-                posX: i,
-                posY: j,
+                position: new IntCoordinate(i,j),
                 status: status
             }
         }
     }
 
-    let startLabel = start.posX + ',' + start.posY;
+    let startLabel = start.coordinates.x + ',' + start.coordinates.y;
     gScore[startLabel].score = 0;
     fScore[startLabel].score = heuristicCostEstimate(start, goal);
 
     while (openSet.size > 0) {
         let current = minScoreLabelSelect(openSet, fScore);
-        if (current === goal.posX + ',' + goal.posY) {
+        if (current === goal.coordinates.x + ',' + goal.coordinates.y) {
             return reconstructPath(cameFrom, current, fScore)
         }
         openSet.delete(current);
@@ -43,7 +42,7 @@ export default function AStar(start, goal, board) {
                 continue;
             }
 
-            let tentativeGScore = gScore[current] + EuclideanDistance(fScore[current], fScore[neighbor]);
+            let tentativeGScore = gScore[current] + EuclideanDistance(fScore[current].position, fScore[neighbor].position);
 
             if (!openSet.has(neighbor)) {
                 openSet.add(neighbor);
@@ -53,7 +52,7 @@ export default function AStar(start, goal, board) {
 
             cameFrom[neighbor] = current;
             gScore[neighbor].score = tentativeGScore;
-            fScore[neighbor].score = gScore[neighbor] + heuristicCostEstimate(fScore[neighbor], goal);
+            fScore[neighbor].score = gScore[neighbor] + heuristicCostEstimate(fScore[neighbor].position, goal);
         }
     }
 }
@@ -79,15 +78,15 @@ function reconstructPath(cameFrom, current, nodes) {
     let keys = new Set(Object.keys(cameFrom))
     while (keys.has(current)) {
         current = cameFrom[current];
-        totalPath.push(nodes[current])
+        totalPath.push(nodes[current].position)
     }
     return totalPath
 }
 
 function getNeighbors(node, maxX, maxY, graph) {
     let neighbors = [];
-    let posX = node.posX;
-    let posY = node.posY;
+    let posX = node.position.coordinates.x;
+    let posY = node.position.coordinates.y;
     
 
     if (posX != 0) {
@@ -124,5 +123,6 @@ function getNeighbors(node, maxX, maxY, graph) {
 }
 
 function EuclideanDistance(from, to) {
-    return Math.sqrt(Math.pow(from.posX - to.posX, 2) + Math.pow(from.posY - to.posY, 2));
+    console.log(from, to)
+    return Math.sqrt(Math.pow(from.coordinates.x - to.coordinates.x, 2) + Math.pow(from.coordinates.y - to.coordinates.y, 2));
 }
