@@ -1,9 +1,6 @@
 import CanvasWrapper from '../../canvasWrapper.js'
 import sinon from 'sinon'
 import assert from 'assert';
-import {
-    isNumber
-} from 'util';
 import IntCoordinate from '../../intCoordinate.js';
 
 export default describe('Unit testing canvasWrapper.js', function () {
@@ -12,7 +9,7 @@ export default describe('Unit testing canvasWrapper.js', function () {
     let height = 10;
     let HTMLCanvasMock = {
         getContext: function () {
-            return {
+            let state = {
                 fillStyle: undefined,
                 fillRect: function (posx, posy, width, height) {},
                 beginPath: function () {},
@@ -21,6 +18,7 @@ export default describe('Unit testing canvasWrapper.js', function () {
                 fill: function () {},
                 clearRect: function(posx,posy,width,height){}
             }
+            return state;
         }
 
     }
@@ -28,6 +26,29 @@ export default describe('Unit testing canvasWrapper.js', function () {
     beforeEach(function () {
         canvasWrapper = new CanvasWrapper(width, height, HTMLCanvasMock);
     });
+    describe('constructor', function(){
+        it('should have the following inner state after instantiated with proper width, height and canvasDOMElement -> width: width, height:height, _canvas:canvasDOMElement. _ctx: canvasDOMElement.getContext("2d"), _scene: []. _scene should be empty and should set width and height of canvas element.', function(){
+            let getContextStub = sinon.stub(HTMLCanvasMock, 'getContext');
+            let mockCtx = {
+                test: 'TEST'
+            }
+            getContextStub.returns(mockCtx)
+            let newCanvasWrapper = new CanvasWrapper(width,height,HTMLCanvasMock);
+            assert.equal(newCanvasWrapper.width, width);
+            assert.equal(newCanvasWrapper.height, height);
+            assert.deepEqual(newCanvasWrapper._canvas, HTMLCanvasMock);
+            assert.deepEqual(newCanvasWrapper._scene, []);
+            assert.equal(newCanvasWrapper._canvas.width, width);
+            assert.equal(newCanvasWrapper._canvas.height, height);  
+            assert.deepEqual(newCanvasWrapper._ctx, mockCtx);
+
+            getContextStub.restore();
+        });
+        it('should throw error if given canvas element is undefined of getContext is not a function', function(){
+            assert.throws(()=> new canvasWrapper(width,height,undefined), Error);
+            assert.throws(()=> new canvasWrapper(width,height,{}), Error);
+        })
+    })
     describe('function createRect', function () {
         it('should return an object with fields: type = "rect", width: Number, height: Number, position: {x: Number, y: Number}}, color: String, zindex: Number', function () {
             let width = 1;
@@ -38,17 +59,17 @@ export default describe('Unit testing canvasWrapper.js', function () {
             let color = 'red';
             let rect = canvasWrapper.createRect(posX, posY, width, height, color, zindex);
             assert.equal(rect.type, 'rect')
-            assert.equal(isNumber(rect.width), true);
+            assert.equal(Number.isNaN(rect.width), false);
             assert.equal(rect.width, width);
-            assert.equal(isNumber(rect.height), true);
+            assert.equal(Number.isNaN(rect.height), false);
             assert.equal(rect.height, height);
-            assert.equal(isNumber(rect.position.x), true);
-            assert.equal(isNumber(rect.position.y), true);
+            assert.equal(Number.isNaN(rect.position.x), false);
+            assert.equal(Number.isNaN(rect.position.y), false);
             assert.equal(rect.position.x, posX);
             assert.equal(rect.position.y, posY);
             assert.equal(typeof rect.color == 'string', true);
             assert.equal(rect.color, color);
-            assert.equal(isNumber(rect.zindex), true);
+            assert.equal(Number.isNaN(rect.zindex), false);
             assert.equal(rect.zindex, zindex);
         });
         it('should set position to (0,0), width = 10, height to 10, color to black and zindex to 0 by default', function () {
@@ -83,18 +104,18 @@ export default describe('Unit testing canvasWrapper.js', function () {
             let zindex = 1;
             let circle = canvasWrapper.createCircle(posX, posY, radius, color, zindex);
             assert.equal(circle.type, 'circle');
-            assert.equal(isNumber(circle.position.x), true);
-            assert.equal(isNumber(circle.position.y), true);
+            assert.equal(Number.isNaN(circle.position.x), false);
+            assert.equal(Number.isNaN(circle.position.y), false);
             assert.equal(circle.position.x, posX);
             assert.equal(circle.position.y, posY);
-            assert.equal(isNumber(circle.radius), true);
-            assert.equal(isNumber(circle.startAngle), true);
+            assert.equal(Number.isNaN(circle.radius), false);
+            assert.equal(Number.isNaN(circle.startAngle), false);
             assert.equal(circle.startAngle, 0);
-            assert.equal(isNumber(circle.endAngle), true);
+            assert.equal(Number.isNaN(circle.endAngle), false);
             assert.equal(circle.endAngle, Math.PI * 2);
             assert.equal(typeof circle.color == 'string', true);
             assert.equal(circle.color, color);
-            assert.equal(isNumber(circle.zindex), true);
+            assert.equal(Number.isNaN(circle.zindex), false);
             assert.equal(circle.zindex, zindex);
         });
         it('should have default values radius = 5, position = (0,0), color = "balck", zindex = 0', function () {

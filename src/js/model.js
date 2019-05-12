@@ -3,59 +3,37 @@ import Snake from './snake.js';
 import Pill from './pill.js';
 import Notifier from './notifier';
 
-import env from '../../env.json'
 import ConfigError from './errors/ConfigError.js';
-import {
-    isObject
-} from 'util';
 
 
 export default class Model {
-    constructor(config, strategies) {
-        this.Commands = {};
-
-        this.notifier = new Notifier(this.callbacks);
-        this.Subjects = {}
-        this.Subjects.notifier = this.notifier;
-        this.strategies = strategies;
-
+    constructor(callbacks, config, strategies) {
         this.getEntityList = this.getEntityList.bind(this);
         this.getEntityByID = this.getEntityByID.bind(this);
         this.propagateError = this.propagateError.bind(this);
 
-        this.callbacks = {
+        this.passedDownCallbacks = {
             getEntityList: this.getEntityList,
             getEntityByID: this.getEntityByID,
             propagateError: this.propagateError
         }
         
+        this.notifier = new Notifier(this.passedDownCallbacks);
+        this.strategies = strategies;
+        this.callbacks = callbacks;
+
+        
         let parsedConfig = this.parseConfig(config);
 
+        this.config = config;
+        this.simulationSpeed = parsedConfig.simulationSpeed;
         this.Entities = {
             snakes: parsedConfig.snakes,
             pills: parsedConfig.pills,
             board: parsedConfig.board,
         };
         
-
-        
-
-        //TODO: Do something about initializatuion prevedence
-
-        // const _snake = new Snake(this.callbacks, config.snakeConfig, this.strategies.PlainAStar);
-        // this.Entities.snake = _snake;
-        // const _board = new Board(this.callbacks, config.boardConfig);
-        // this.Entities.board = _board;
-        // const _pill = new Pill(this.callbacks, config.pillConfig);
-        // this.Entities.pill = _pill;
-
-        // if(env && env.RUN_ENV == 'browser'){
-        //     this.addEventListener = this.setupKeyboardCommands.bind(this);
-        //     this.setupKeyboardCommands();
-        // }
     }
-
-    // addSnake()
 
     update() {
         if (!this.isGameOver()) {
@@ -86,10 +64,10 @@ export default class Model {
             board.reset();
     }
 
-    snakeFactory(snakeConfig) {
+    snakeFactory(snakeConfig, notifier) {
         let strategyName = snakeConfig.strategy;
         let strategy = this.strategies[strategyName];
-        let snake = new Snake(this.callbacks, snakeConfig, strategy);
+        let snake = new Snake(this.passedDownCallbacks, snakeConfig, strategy, notifier);
         return snake;
     }
 
@@ -130,7 +108,7 @@ export default class Model {
             if (Array.isArray(pillConfigs)) {
                 let pills = [];
                 for (let pillConfig of pillConfigs) {
-                    let pill = new Pill(this.callbacks, pillConfig);
+                    let pill = new Pill(this.passedDownCallbacks, pillConfig);
                     pills.push(pill);
                 }
                 parsedConfig.pills = pills;
@@ -139,23 +117,23 @@ export default class Model {
             }
         }
         if (boardConfig) {
-            if (isObject(boardConfig)) {
-                let board = new Board(this.callbacks, boardConfig);
+            if (typeof boardConfig == 'object') {
+                let board = new Board(this.passedDownCallbacks, boardConfig);
                 parsedConfig.board = board;
             } else {
                 throw new ConfigError('boardConfig field of config should be an Object!');
             }
         }
         if (mainConfig) {
-            if (mainConfig.speed) {
-                let speed = Number(mainConfig.speed);
-                if (Number.isInteger(speed)) {
-                    parsedConfig.speed = speed;
+            if (mainConfig.simulationSpeed) {
+                let simulationSpeed = Number(mainConfig.simulationSpeed);
+                if (Number.isInteger(simulationSpeed)) {
+                    parsedConfig.simulationSpeed = simulationSpeed;
                 } else {
-                    throw new ConfigError('speed value should be Integer!');
+                    throw new ConfigError('simulationSpeed value should be Integer!');
                 }
             } else {
-                throw new ConfigError('Missing main config field speed!');
+                throw new ConfigError('Missing main config field simulationSpeed!');
             }
         }
 

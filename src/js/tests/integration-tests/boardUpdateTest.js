@@ -6,7 +6,7 @@ import Snake from '../../snake';
 import Board from '../../board';
 import Pill from '../../pill';
 
-describe('Integration test of Board.update', function () {
+describe('Integration test of Board', function () {
     let boardConfig = {
         width: "3",
         height: "3"

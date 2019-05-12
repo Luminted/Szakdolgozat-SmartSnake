@@ -2,20 +2,19 @@ import ObserverEntity from './AbstractClasses/ObserverEntity';
 import cloneDeep from 'lodash/cloneDeep';
 import ConfigError from './errors/ConfigError.js';
 import IntCoordinate from './intCoordinate.js';
-import CoordinateError from './errors/IntCoordinateError';
 
-import uuidv1 from 'uuid/v1';
+import {idGenerator} from './customUtils'
 
 export default class Pill extends ObserverEntity {
     constructor(callbacks, config, notifier) {
-        //log.info('Initializing Pill...');
         super();
         let parsedConfig = this.parseConfig(config);
         this.state = parsedConfig;
-        this.state.ID = uuidv1();
+        this.state.ID = idGenerator();
 
 
         this.callbacks = callbacks;
+        this.config = config;
 
         if (notifier) {
             notifier.subscribe(this);
@@ -33,7 +32,6 @@ export default class Pill extends ObserverEntity {
         parsedConfig.limits = {};
         parsedConfig.limits.x = Number(config.limitX);
         parsedConfig.limits.y = Number(config.limitY);
-        parsedConfig.config = config;
 
         return parsedConfig;
     }
@@ -50,7 +48,7 @@ export default class Pill extends ObserverEntity {
     }
 
     reset() {
-        let parsedConfig = this.parseConfig(this.state.config);
+        let parsedConfig = this.parseConfig(this.config);
 
         this.setState({
             position: parsedConfig.position,
@@ -115,10 +113,6 @@ export default class Pill extends ObserverEntity {
 
     get pillValue() {
         return this.state.pillValue;
-    }
-
-    get config() {
-        return this.state.config;
     }
 
     get limits() {

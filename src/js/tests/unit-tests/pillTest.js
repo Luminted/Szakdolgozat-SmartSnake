@@ -1,28 +1,10 @@
-import assert, { deepEqual } from 'assert';
-import Model from '../../model.js';
+import assert from 'assert';
 import IntCoordinate from '../../intCoordinate.js';
-import {
-    isObject
-} from 'util';
 import sinon from 'sinon';
 import Pill from '../../pill.js';
-import Snake from '../../snake.js';
+import Notifier from '../../notifier.js';
 
 describe('Unit testing pill.js', function () {
-    let snakeConfig1 = {
-        baseLength: "1",
-        startX: "0",
-        startY: "0",
-        startDirection: 'RIGHT',
-        startVelocity: "1",
-    }
-    let snakeConfig2 = {
-        baseLength: "1",
-        startX: "1",
-        startY: "1",
-        startDirection: 'RIGHT',
-        startVelocity: "1",
-    }
     let pillConfig = {
         pillValue: "1",
         startPosX: "1",
@@ -30,10 +12,36 @@ describe('Unit testing pill.js', function () {
         limitX: "2",
         limitY: "2",
     }
+    let mockCallbacks = {
+        test: function(){}
+    }
     let pill;
+    let notifier;
     beforeEach(function () {
+        notifier = new Notifier();
         pill = new Pill({}, pillConfig);
     });
+
+    describe('constructor', function(){
+        it('should have the following inner state after instantiated by a full config, callbacks and Notifier -> config: config, callbacks: callbacks, state.ID: idGenerator() and state should contain the result of parseConfig. It should subscribe to given notifier.', function(){
+            let subscribeSpy = sinon.spy(notifier, 'subscribe');
+            let newPill = new Pill(mockCallbacks,pillConfig,notifier);
+
+            console.log(newPill)
+            assert.deepEqual(newPill.callbacks, mockCallbacks);
+            assert.deepEqual(newPill.config, pillConfig);
+            let parsedConfig = newPill.parseConfig(pillConfig);
+            for(let key of Object.keys(parsedConfig)){
+                assert.deepEqual(newPill.state[key], parsedConfig[key]);
+            }
+            assert.equal(subscribeSpy.calledWith(newPill), true);
+            
+            subscribeSpy.restore();
+        });
+        it('should not depend on callbacks or given notifier', function(){
+            assert.doesNotThrow(()=> new Pill(undefined,pillConfig,undefined),Error);
+        });
+    })
 
     describe('function parseConfig', function () {
         it('should throw a ConfigError if config is undefined', function () {
@@ -114,7 +122,7 @@ describe('Unit testing pill.js', function () {
             }
 
         });
-        it('should return an object with fields: position: IntCoordinate, pillValue: Integer,dimensions:{x:Integer, y:Integer}, config: Object', function () {
+        it('should return an object with fields: position: IntCoordinate, pillValue: Integer,limits:{x:Integer, y:Integer}', function () {
             let parsedConfig = pill.parseConfig(pillConfig);
             assert.equal(parsedConfig.pillValue, pillConfig.pillValue);
             assert.equal(Number.isInteger(parsedConfig.pillValue), true);
@@ -123,8 +131,6 @@ describe('Unit testing pill.js', function () {
             assert.equal(parsedConfig.position.coordinates.y, Number(pillConfig.startPosY));
             assert.equal(parsedConfig.limits.x, Number(pillConfig.limitX));
             assert.equal(parsedConfig.limits.y, Number(pillConfig.limitY));
-            assert.deepEqual(parsedConfig.config, pillConfig);
-            assert.equal(isObject(parsedConfig.config), true);
 
         });
         it('should not throw an error with a proper configuration', function () {

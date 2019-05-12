@@ -2,8 +2,7 @@ import Entity from './AbstractClasses/Entity';
 import cloneDeep from 'lodash/cloneDeep';
 import ConfigError from './errors/ConfigError.js';
 import IntCoordinate from './intCoordinate.js';
-
-import uuidv1 from 'uuid/v1';
+import {idGenerator} from './customUtils.js';
 
 export default class Board extends Entity {
     constructor(callbacks, config) {
@@ -11,12 +10,12 @@ export default class Board extends Entity {
 
         super();
         this.state = {};
-        this.state.ID = uuidv1();
+        this.state.ID = idGenerator();
         let parsedConfig = this.parseConfig(config);
         Object.assign(this.state, parsedConfig);
         this.callbacks = callbacks;
         this.state.initialTiles = cloneDeep(this.state.tiles);
-        this.state.config = config;
+        this.config = config;
     }
 
     parseConfig(config) {
@@ -115,10 +114,6 @@ export default class Board extends Entity {
 
     get tiles() {
         return this.state.tiles;
-    }
-
-    get config() {
-        return this.state.config;
     }
 
     get ID(){

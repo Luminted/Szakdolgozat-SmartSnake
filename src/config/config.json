@@ -1,22 +1,30 @@
 {
     "main":{
-        "speed":10
+        "simulationSpeed":10
     },
     "boardConfig":{
         "width": 30,
         "height": 30
     },
-    "snakeConfig": {
+    "snakeConfigs": [{
         "baseLength": "1",
         "startX": "0",
         "startY": "0",
         "startDirection": "RIGHT",
         "startVelocity": "1",
-        "strategy": "AStar"
+        "strategy": "plainAStarStrategy"
     },
-    "pillConfig": {
+    {
+        "baseLength": "1",
+        "startX": "20",
+        "startY": "20",
+        "startDirection": "LEFT",
+        "startVelocity": "1",
+        "strategy": "plainAStarStrategy"
+    }],
+    "pillConfigs": [{
         "pillValue": 1,
-        "startPosX": 1,
-        "startPosY": 1
-    }
+        "startPosX": 15,
+        "startPosY": 15
+    }]
 }

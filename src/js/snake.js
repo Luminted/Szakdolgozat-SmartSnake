@@ -8,16 +8,17 @@ import DownTurnCommand from './Commands/DownTurnCommand';
 import UpTurnCommand from './Commands/UpTurnCommand';
 import IntCoordinate from './intCoordinate';
 
+import {
+    idGenerator
+} from './customUtils.js';
 import cloneDeep from 'lodash/cloneDeep';
-import uuidv1 from 'uuid/v1';
 
 export default class Snake extends ObserverEntity {
     constructor(callbacks, config, strategy, notifier) {
 
         super();
         this.state = {}
-        this.state.ID = uuidv1();
-        this.callbacks = callbacks;
+        this.state.ID = idGenerator();
         let parsedConfig = this.parseConfig(config)
         this.state.command = void 0;
         this.state.velocity = {
@@ -26,13 +27,14 @@ export default class Snake extends ObserverEntity {
         }
         this.state.notificationBuffer = [];
         this.state.status = "ALIVE";
-        this.state.config = config;
         this.state.strategy = strategy;
-        this.state.path = [];
+        this.state.path = undefined;
         Object.assign(this.state, parsedConfig);
 
-        this.notifier = notifier;
-        if(notifier){
+        this.config = config;
+        this.callbacks = callbacks;
+        if (notifier) {
+            this.notifier = notifier;
             notifier.subscribe(this);
         }
     }
@@ -62,37 +64,39 @@ export default class Snake extends ObserverEntity {
         let command;
         let notifier = this.notifier;
 
-        if(this.state.strategy && this.state.strategy.pathfinder){
-            path = this.calculatePath();
-            command = this.calculateCommand(this.head, path[0]);
-
-        }
-        command = command || this.state.command;
-        if(command){
-            commandResult = command.execute(this);
-        }
-
-        nextDirection = commandResult || this.direction;
-        nextVelocity = this.calculateVelocity(nextDirection);
-        nextBody = this.move(nextVelocity.x, nextVelocity.y);
-        nextStep = nextBody[0];
-        if(notifier){
-            notifier.calculateStepCollisionType(nextStep);
-        }
-        Object.assign(nextState, {
-            direction: nextDirection,
-            body: nextBody,
-            velocity: nextVelocity,
-            path: path
-        });
-        let notificationBuffer = this.state.notificationBuffer;
-        let notification = notificationBuffer.pop();
-        while(notification){
-            this.processNotification(notification,nextState);
-            notification = notificationBuffer.pop();
-        }
         if (this.isAlive()) {
-            this.setState(nextState);
+            path = this.calculatePath();
+            if (path && path.length > 0) {
+                command = this.calculateCommand(this.head, path[0]);
+            }
+
+            command = command || this.state.command;
+            if (command) {
+                commandResult = command.execute(this);
+            }
+
+            nextDirection = commandResult || this.direction;
+            nextVelocity = this.calculateVelocity(nextDirection);
+            nextBody = this.move(nextVelocity.x, nextVelocity.y);
+            nextStep = nextBody[0];
+            if (notifier) {
+                notifier.calculateStepCollisionType(nextStep);
+            }
+            Object.assign(nextState, {
+                direction: nextDirection,
+                body: nextBody,
+                velocity: nextVelocity,
+                path: path
+            });
+            let notificationBuffer = this.state.notificationBuffer;
+            let notification = notificationBuffer.pop();
+            while (notification) {
+                this.processNotification(notification, nextState);
+                notification = notificationBuffer.pop();
+            }
+            if (this.isAlive()) {
+                this.setState(nextState);
+            }
         }
     }
 
@@ -132,51 +136,47 @@ export default class Snake extends ObserverEntity {
     onNotify(entity, event) {
         let eventType = event.type
         switch (eventType) {
-            case ('PILL_COLLISION'):
-                {
-                    let storedNotification = {
-                        type: eventType,
-                        payload: {
-                            entity: entity
-                        }
+            case ('PILL_COLLISION'): {
+                let storedNotification = {
+                    type: eventType,
+                    payload: {
+                        entity: entity
                     }
-                    this.storeNotification(storedNotification);
-                    break;
                 }
-            case ('WALL_COLLISION'):
-                {
-                    let storedNotification = {
-                        type: eventType,
-                        payload: {
-                            entity: entity
-                        }
+                this.storeNotification(storedNotification);
+                break;
+            }
+            case ('WALL_COLLISION'): {
+                let storedNotification = {
+                    type: eventType,
+                    payload: {
+                        entity: entity
                     }
-                    this.storeNotification(storedNotification);
-                    break;
                 }
-            case ('BODY_COLLISION'):
-                {
-                    let storedNotification = {
-                        type: eventType,
-                        payload: {
-                            entity: entity
-                        }
+                this.storeNotification(storedNotification);
+                break;
+            }
+            case ('BODY_COLLISION'): {
+                let storedNotification = {
+                    type: eventType,
+                    payload: {
+                        entity: entity
                     }
-                    this.storeNotification(storedNotification);
+                }
+                this.storeNotification(storedNotification);
 
-                    break;
-                }
-            case ('TARGET_REACHED'):
-                {
-                    let storedNotification = {
-                        type: eventType,
-                        payload: {
-                            entity: entity
-                        }
+                break;
+            }
+            case ('TARGET_REACHED'): {
+                let storedNotification = {
+                    type: eventType,
+                    payload: {
+                        entity: entity
                     }
-                    this.storeNotification(storedNotification);
-                    break;
                 }
+                this.storeNotification(storedNotification);
+                break;
+            }
         }
     }
 
@@ -195,8 +195,8 @@ export default class Snake extends ObserverEntity {
                 this.die();
                 break;
             case ('TARGET_REACHED'):
-                let strategy = this.state.strategy; 
-                if(strategy && strategy.targetSetter){
+                let strategy = this.state.strategy;
+                if (strategy && strategy.targetSetter) {
                     strategy.targetSetter(this);
                 }
         }
@@ -302,7 +302,11 @@ export default class Snake extends ObserverEntity {
     }
 
     calculatePath() {
-        let path = this.state.strategy.pathfinder();
+        let strategy = this.state.strategy;
+        let path;
+        if (strategy && strategy.pathfinder) {
+            path = strategy.pathfinder();
+        }
         return path;
     }
 
@@ -350,10 +354,6 @@ export default class Snake extends ObserverEntity {
         return this.state.status;
     }
 
-    get config() {
-        return this.state.config;
-    }
-
     get target() {
         return this.state.target;
     }
@@ -362,7 +362,7 @@ export default class Snake extends ObserverEntity {
         return this.body.slice(1);
     }
 
-    get ID(){
+    get ID() {
         return this.state.ID;
     }
 }

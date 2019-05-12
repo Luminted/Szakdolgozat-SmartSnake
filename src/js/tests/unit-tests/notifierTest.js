@@ -37,6 +37,9 @@ describe('Unit testing Notifier class', function(){
         }
         execute(){}
     }
+    let mockCallBacks = {
+        test: function(){}
+    }
     let notifier;
 
 
@@ -44,6 +47,18 @@ describe('Unit testing Notifier class', function(){
         notifier = new Notifier();
     });
 
+    describe('contructor', function(){
+        it('should have the following inner state after being instantiated with callbacks -> callbacks: callbacks, observers: Set, nextStepBuffer: []. Observers and nextStepBuffer should be empty.', function(){
+            let newNotifier = new Notifier(mockCallBacks);
+            assert.equal(newNotifier.observers instanceof Set, true);
+            assert.equal(newNotifier.observers.size, 0);
+            assert.deepEqual(newNotifier.nextStepBuffer, []);
+            assert.deepEqual(newNotifier.callbacks, mockCallBacks);
+        });
+        it('should not depend on callbacks', function(){
+            assert.doesNotThrow(() => new Notifier(undefined), Error);
+        })
+    })
     describe('function subscribe', function(){
         it("should add given ObserverEntity to it's observers", function(){
             let mockObserverEntity = new MockObserverEntityClass();

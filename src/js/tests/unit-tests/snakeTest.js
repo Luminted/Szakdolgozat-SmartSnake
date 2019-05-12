@@ -4,12 +4,17 @@ import RightTurnCommand from '../../Commands/RightTurnCommand';
 import DownTurnCommand from '../../Commands/DownTurnCommand';
 import UpTurnCommand from '../../Commands/UpTurnCommand';
 import IntCoordinate from '../../intCoordinate.js';
+import {
+    idGenerator
+} from '../../customUtils';
+
 
 import assert from 'assert';
 import sinon from 'sinon';
 import cloneDeep from 'lodash/cloneDeep'
 import Snake from '../../snake.js';
 import Pill from '../../pill.js';
+import Notifier from '../../notifier.js';
 
 
 export default {
@@ -22,20 +27,46 @@ export default {
             startVelocity: "1",
             strategy: "AStar"
         }
-        let pillConfig = {
-            pillValue: "1",
-            startPosX: "1",
-            startPosY: "1",
-            limitX: "2",
-            limitY: "2",
+        let mockStrategy = {
+            test: function () {
+
+            }
         }
-        let snake = null;
-        let pill = null;
+        let mockCallbacks = {
+            test: function () {}
+        }
+        let notifier;
+        let snake;
 
         beforeEach(function () {
+            notifier = new Notifier();
             snake = new Snake({}, snakeConfig);
-            pill = new Pill({}, pillConfig);
         });
+        describe('contructor', function () {
+            it('should have the following inner state if instantiated with a full config, callbacks, strategy, Notifier, callbacks: callbacks, notifier: Notifier, config: config,state.ID: customUtils/idGenerator(),state.strategy:strategy, state.command: undefined, state.notificationBuffer: [], state.status: "ALIVE", state.path: undefined, state.velocity: {x:0, y:0},  and the result of parsedConfig should be added too. Snake should subscribe to the given notifier.', function () {
+                let subscribeSpy = sinon.spy(notifier, 'subscribe');
+                let newSnake = new Snake(mockCallbacks, snakeConfig, mockStrategy, notifier);
+                let parsedConfig = newSnake.parseConfig(snakeConfig);
+                assert.deepEqual(newSnake.callbacks, mockCallbacks);
+                assert.deepEqual(newSnake.config, snakeConfig);
+                assert.equal(newSnake.notifier, notifier);
+                assert.equal(newSnake.state.ID.split('-')[0], 'id');
+                assert.equal(newSnake.state.command, undefined);
+                assert.deepEqual(newSnake.state.notificationBuffer, []);
+                assert.equal(newSnake.state.status, 'ALIVE');
+                assert.deepEqual(newSnake.state.strategy, mockStrategy);
+                assert.equal(newSnake.state.path, undefined);
+                for (let key of Object.keys(parsedConfig)) {
+                    assert.deepEqual(newSnake.state[key], parsedConfig[key]);
+                }
+                assert.equal(subscribeSpy.calledWith(newSnake), true);
+
+                subscribeSpy.restore();
+            });
+            it('should not have a dependency on callbacks, strategy or notifier', function(){
+                assert.doesNotThrow(() => new Snake(undefined,snakeConfig,undefined,undefined), Error);
+            })
+        })
         describe('function parseConfig', function () {
             it('should return an object with fields body: [IntCoordinates->nullPosition = false], direction: (LEFT | RIGHT | UP | DOWN), baseVelocity: integer', function () {
                 let snakeConfig = {
@@ -63,7 +94,7 @@ export default {
                     startX: "0",
                     startY: "0",
                     startDirection: "RIGHT",
-                    
+
                 }
                 let config2 = {
                     startVelocity: "1",
@@ -71,7 +102,7 @@ export default {
                     startX: "0",
                     startY: "0",
                     startDirection: "RIGHT",
-                    
+
                 }
                 let config3 = {
                     startVelocity: "1",
@@ -79,7 +110,7 @@ export default {
                     // startX: "0",
                     startY: "0",
                     startDirection: "RIGHT",
-                    
+
                 }
                 let config4 = {
                     startVelocity: "1",
@@ -87,7 +118,7 @@ export default {
                     startX: "0",
                     // startY: "0",
                     startDirection: "RIGHT",
-                    
+
                 }
                 let config5 = {
                     startVelocity: "1",
@@ -95,7 +126,7 @@ export default {
                     startX: "0",
                     startY: "0",
                     // startDirection: "RIGHT",
-                    
+
                 }
 
                 //TODO: check for custom error
@@ -135,12 +166,12 @@ export default {
                 let foodValue = 3;
                 let lastNode = snake.body[snake.bodyLength - 1];
                 let additionalNodes = snake.eat(foodValue);
-                for(let node of additionalNodes){
+                for (let node of additionalNodes) {
                     assert.deepEqual(node, lastNode);
                 }
                 assert.equal(additionalNodes.length, foodValue);
             });
-            it('should not change the inner state of Snake', function(){
+            it('should not change the inner state of Snake', function () {
                 let originalState = cloneDeep(snake.state);
                 let foodValue = 3;
                 snake.eat(foodValue);
@@ -228,7 +259,7 @@ export default {
                 assert.equal(snake.direction, "DOWN");
                 assert.equal(command instanceof UpTurnCommand, false);
             });
-            
+
             it('it should return DownTurnCommand', function () {
                 snake.setState({
                     direction: "RIGHT",
@@ -254,9 +285,9 @@ export default {
                 assert.equal(snake.direction, "UP");
                 assert.equal(command instanceof DownTurnCommand, false);
             });
-            it('should return undefined if from and to are the same positions', function(){
-                let from = new IntCoordinate(15,15);
-                let to = new IntCoordinate(15,15);
+            it('should return undefined if from and to are the same positions', function () {
+                let from = new IntCoordinate(15, 15);
+                let to = new IntCoordinate(15, 15);
                 let command = snake.calculateCommand(from, to);
                 assert.equal(command, undefined);
             })

@@ -4,15 +4,35 @@ import IntCoordinate from '../../intCoordinate.js';
 
 export default {
     "boardTest": describe('unit testing board.js', function () {
-        let config = {
+        let boardConfig = {
             width: "3",
             height: "3"
+        }
+        let mockCallbacks = {
+            test: function(){}
         }
         let board;
 
         beforeEach(function () {
-            board = new Board(undefined, config);
+            board = new Board(undefined, boardConfig);
         });
+
+        describe('constructor', function(){
+            it('should have the following inner state after instatiating it with a full config and callbacks -> callbacks: callbacks, config: config, state.ID: idGenerator(), state.initialTiles: equals parseConfig produced tiles field and state should also contain the result of parsedConfig.', function(){
+                let newBoard = new Board(mockCallbacks, boardConfig);
+                assert.deepEqual(newBoard.config, boardConfig);
+                assert.deepEqual(newBoard.callbacks, mockCallbacks);
+                assert.equal(newBoard.state.ID.split('-')[0], 'id');
+                let parsedConfig = newBoard.parseConfig(boardConfig);
+                for(let key of Object.keys(parsedConfig)){
+                    assert.deepEqual(newBoard.state[key], parsedConfig[key]);
+                }
+                assert.deepEqual(newBoard.state.initialTiles, newBoard.state.tiles);
+            });
+            it('should not depend on callbacks', function(){
+                assert.doesNotThrow(() => new Board(undefined, boardConfig), Error);
+            })
+        })
         describe('function parseConfig', function () {
             it('should return an object with the following fields: width: integer, height: integer, tiles: [{id: string, IntCoord->nullPosition = false, status: string}]', function () {
                 let config = {

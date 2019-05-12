@@ -5,6 +5,7 @@ import Entity from '../../AbstractClasses/Entity';
 import Snake from '../../snake.js';
 import Pill from '../../pill.js';
 import Board from '../../board.js';
+import Notifier from '../../notifier';
 
 
 describe('Integration tests of class Model', function () {
@@ -66,7 +67,7 @@ describe('Integration tests of class Model', function () {
         strategy: "mockStrategy3"
     }
     let mainConfig = {
-        speed: "10"
+        simulationSpeed: "10"
     }
     let config = {
         main: mainConfig,
@@ -74,9 +75,36 @@ describe('Integration tests of class Model', function () {
         snakeConfigs: [snakeConfig1, snakeConfig2, snakeConfig3],
         pillConfigs: [pillConfig1, pillConfig2]
     }
+    let mockCallbacks = {
+        test: function(){}
+    }
     beforeEach(function setUp() {
-        model = new Model(config, mockStrategiesIndex);
-        model.strategies = mockStrategiesIndex;
+        model = new Model(mockCallbacks,config, mockStrategiesIndex);
+    })
+
+    describe('constructor', function(){
+        it('should have the following inner state after instantiating with a full config, callbacks and strategies index -> notifier: Notifier, callbacks: callbacks, strategies: strategies, passedDownCallbacks:{function getEntityList, function getEntityByID, function propagateError}, Entities :{snakes: [Snake], pills: [Pill], board: Board}, simulationSpeed: Integer. Model.notifier instantiated with passedDownCallbacks', function(){
+            let newModel = new Model(mockCallbacks, config, mockStrategiesIndex);
+            let parsedConfig = newModel.parseConfig(config);
+
+            assert.deepEqual(newModel.callbacks, mockCallbacks);
+            assert.equal(newModel.notifier instanceof Notifier, true);
+            assert.deepEqual(newModel.strategies, mockStrategiesIndex);
+            assert.equal(typeof newModel.passedDownCallbacks.getEntityList, 'function');
+            assert.equal(typeof newModel.passedDownCallbacks.getEntityByID, 'function');
+            assert.equal(typeof newModel.passedDownCallbacks.propagateError, 'function');
+            assert.equal(newModel.simulationSpeed, parsedConfig.simulationSpeed);
+            for(let snake of newModel.Entities.snakes){
+                assert.equal(snake instanceof Snake, true);
+            }
+            for(let pill of newModel.Entities.pills){
+                assert.equal(pill instanceof Pill, true);
+            }
+            assert.equal(newModel.Entities.board instanceof Board, true);
+        });
+        it('should not be dependent of callbacks or strategy index', function(){
+            assert.doesNotThrow(() => new Model(undefined,config,undefined), Error);
+        });
     })
     describe('function update', function () {
         it('should call update on all entities, once, if isGameOver returns false', function () {
@@ -244,14 +272,18 @@ describe('Integration tests of class Model', function () {
         })
     })
     describe('function snakeFactory', function () {
-        it('should receive a list of snake configs and return a Snake with the given strategy in config', function () {
-            let snake1 = model.snakeFactory(snakeConfig1);
-            let snake2 = model.snakeFactory(snakeConfig2);
-            let snake3 = model.snakeFactory(snakeConfig3);
+        it('should a snake config and a notifier, and return a Snake with the given strategy in config', function () {
+            let notifier = new Notifier();
+            let snake1 = model.snakeFactory(snakeConfig1,notifier);
+            let snake2 = model.snakeFactory(snakeConfig2,notifier);
+            let snake3 = model.snakeFactory(snakeConfig3,notifier);
 
             assert.equal(snake1.state.strategy.name, snakeConfig1.strategy);
+            assert.equal(snake1.state.notifier, snakeConfig1.notifier);
             assert.equal(snake2.state.strategy.name, snakeConfig2.strategy);
+            assert.equal(snake2.state.notifier, snakeConfig2.notifier);
             assert.equal(snake3.state.strategy.name, snakeConfig3.strategy);
+            assert.equal(snake3.state.notifier, snakeConfig3.notifier);
         });
     });
     describe('function enrichConfig', function () {
@@ -290,14 +322,14 @@ describe('Integration tests of class Model', function () {
         })
     })
     describe('function parseConfig', function () {
-        it('should return an object with fields: snakes:[Snake], pills: [Pill], board: Board, speed: Integer. Values of returned object should match given config values. Callbacks field of entities should be models callbacks.', function () {
+        it('should return an object with fields: snakes:[Snake], pills: [Pill], board: Board, simulationSpeed: Integer. Values of returned object should match given config values. Callbacks field of entities should be models callbacks.', function () {
             let config = {
                 main: mainConfig,
                 boardConfig: boardConfig,
                 snakeConfigs: [snakeConfig1, snakeConfig2],
                 pillConfigs: [pillConfig1, pillConfig2]
             }
-            let callbacks = model.callbacks;
+            let passedDownCallbacks = model.passedDownCallbacks;
             let result = model.parseConfig(config);
             assert.equal(Array.isArray(result.snakes), true);
             let snakes = result.snakes;
@@ -305,23 +337,23 @@ describe('Integration tests of class Model', function () {
                 assert.equal(snakes[i] instanceof Snake, true);
                 assert.deepEqual(snakes[i].state.strategy, model.strategies[config.snakeConfigs[i].strategy]);
                 assert.deepEqual(snakes[i].config, config.snakeConfigs[i]);
-                assert.deepEqual(snakes[i].callbacks, callbacks);
+                assert.deepEqual(snakes[i].callbacks, passedDownCallbacks);
             }
             assert.equal(Array.isArray(result.pills), true);
             let pills = result.pills;
             for (let i = 0; i < pills.length; i++) {
                 assert.equal(pills[i] instanceof Pill, true);
                 assert.deepEqual(pills[i].config, config.pillConfigs[i]);
-                assert.deepEqual(pills[i].callbacks, callbacks);
+                assert.deepEqual(pills[i].callbacks, passedDownCallbacks);
 
             }
             assert.equal(result.board instanceof Board, true);
             assert.deepEqual(result.board.config, config.boardConfig);
-            assert.deepEqual(result.board.callbacks, callbacks);
-            assert.equal(Number.isInteger(result.speed), true);
-            assert.equal(result.speed, Number(config.main.speed));
+            assert.deepEqual(result.board.callbacks, passedDownCallbacks);
+            assert.equal(Number.isInteger(result.simulationSpeed), true);
+            assert.equal(result.simulationSpeed, Number(config.main.simulationSpeed));
         });
-        it('should throw ConfigError if essential fields are missing from config or if config is misshapen. Essential fields: main.speed, snakeConfig.strategy. Proper shape: {mainConfig: Object, snakeConfigs: Array, pillConfigs: Array, boardConfig: Object}. Fields may be undefined', function () {
+        it('should throw ConfigError if essential fields are missing from config or if config is misshapen. Essential fields: main.simulationSpeed, snakeConfig.strategy. Proper shape: {mainConfig: Object, snakeConfigs: Array, pillConfigs: Array, boardConfig: Object}. Fields may be undefined', function () {
             let MissingMainSpeed = {
                 main: {},
                 boardConfig: boardConfig,
@@ -330,7 +362,7 @@ describe('Integration tests of class Model', function () {
             }
             let MainSpeedNotInteger = {
                 main: {
-                    speed: '0.5'
+                    simulationSpeed: '0.5'
                 },
                 boardConfig: boardConfig,
                 snakeConfigs: [snakeConfig1, snakeConfig2],
@@ -362,7 +394,7 @@ describe('Integration tests of class Model', function () {
             }
             let snakeMissingStrategy = {
                 main: {
-                    speed: 10
+                    simulationSpeed: 10
                 },
                 boardConfig: boardConfig,
                 snakeConfigs: [{

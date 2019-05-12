@@ -33,6 +33,7 @@
     "loglevel": "^1.5.0",
     "mainloop.js": "^1.0.4",
     "mocha": "^6.1.2",
+    "rollup-plugin-node-builtins": "^2.1.2",
     "uuid": "^3.3.2",
     "webpack": "^3.4.1",
     "webpack-dev-server": "^2.6.1"

@@ -17,11 +17,11 @@ describe('Integration test of Snake', function () {
     let notifier;
     let pill;
     let mockCallbacks = {
-        getEntityList: function(){}
+        getEntityList: function () {}
     }
     let mockNotifier = {
-        calculateStepCollisionType: function(){},
-        subscribe: function(){}
+        calculateStepCollisionType: function () {},
+        subscribe: function () {}
 
     }
     let snakeConfig = {
@@ -42,97 +42,108 @@ describe('Integration test of Snake', function () {
 
     let mockStrategy = {
         pathfinder: function () {
-            return [new IntCoordinate(1,0)]
+            return [new IntCoordinate(1, 0)]
         },
         targetSetter: function () {}
     }
 
     beforeEach(function setUp() {
-        snake = new Snake(mockCallbacks, snakeConfig,mockStrategy, mockNotifier);
+
+        snake = new Snake(mockCallbacks, snakeConfig, mockStrategy, mockNotifier);
         pill = new Pill({}, pillConfig);
     });
 
     describe('function calculatePath', function () {
         it("should call function in state.strategy.pathfinder and return it's result", function () {
             let pathfinderStub = sinon.stub(snake.state.strategy, 'pathfinder');
-            let path = [new IntCoordinate(1,0), new IntCoordinate(1,1)];
+            let path = [new IntCoordinate(1, 0), new IntCoordinate(1, 1)];
             pathfinderStub.returns(path);
+
             let calculatedPath = snake.calculatePath();
+
             assert.equal(pathfinderStub.called, true);
             assert.deepEqual(calculatedPath, path);
             pathfinderStub.restore();
         });
+        it('it should return undefined if state.strategy or state.strategy.pathfinder is undefined', function () {
+            let calculatedPath;
+
+            // pathfinder undefined case
+            snake.setState({
+                strategy: {}
+            });
+            calculatedPath = snake.calculatePath();
+            assert.equal(calculatedPath, undefined);
+
+            // strategy undefined case
+            snake.setState({
+                strategy: undefined
+            });
+            calculatedPath = snake.calculatePath();
+            assert.equal(calculatedPath, undefined);
+        });
     });
-     describe('function update where isAlive() = true', function () {
+    describe('function update where isAlive() = true', function () {
 
         beforeEach(function aliveAssertion() {
             assert.equal(snake.status, 'ALIVE');
         });
 
-        it('should call calculatePath if state.strategy.pathfinder is not undefined', function () {
+        it('should call calculatePath before calculateCommand', function () {
             let calculatePathSpy = sinon.spy(snake, 'calculatePath');
-            let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
-            calculateCommandStub.returns(undefined);
-            snake.update();
-            assert.notEqual(snake.state.strategy.pathfinder, undefined)
-            assert.equal(calculatePathSpy.called, true);
-        });
-        it('should not call calculateCommand and calculatePath if state.strategy or state.strategy.pathfinder is undefined', function () {
             let calculateCommandSpy = sinon.spy(snake, 'calculateCommand');
-            let calculatePathSpy = sinon.spy(snake, 'calculatePath');
 
-            // state.strategy == undefined case
-            snake.setState({
-                strategy: undefined,
-            });
             snake.update();
-            assert.equal(calculateCommandSpy.called, false);
-            assert.equal(calculatePathSpy.called, false);
 
-            //state.strategy.pathfider == undefined case
-            snake.setState({
-                strategy: {}
-            });
-            snake.update();
-            assert.equal(calculateCommandSpy.called, false);
-            assert.equal(calculatePathSpy.called, false);
-
-        })
-        it("should call calculateCommand after calling calculatePath with the head of it's result and head of Snake", function () {
-            let pathfinderStub = sinon.stub(snake.state.strategy, 'pathfinder');
-            let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
-            calculateCommandStub.returns(undefined);
-            let path = [new IntCoordinate(1,0), new IntCoordinate(1,1)];
-            pathfinderStub.returns(path);
-            let snakeOriginalHead = snake.head;
-            snake.update();
-            let pathHead = path[0];
-            assert.equal(pathfinderStub.called, true);
-            assert.equal(calculateCommandStub.calledImmediatelyAfter(pathfinderStub), true);
-            assert.equal(calculateCommandStub.calledWith(snakeOriginalHead, pathHead), true);
-            pathfinderStub.restore();
-
-        })
-
-        it("should call Notifier.calculateStepCollisionType, once, with the head of move's result body, if notifier is not undefined", function () {
-            let calculateStepCollisionTypeSpy = sinon.spy(mockNotifier, 'calculateStepCollisionType');
-            let moveSpy = sinon.spy(snake, 'move');
-            snake.update();
-            assert.notEqual(snake.notifier, undefined);
-            assert.equal(calculateStepCollisionTypeSpy.calledOnce, true);
-            assert.equal(calculateStepCollisionTypeSpy.calledAfter(moveSpy), true);
-            let nextHead = moveSpy.returnValues[0][0];
-            assert.equal(calculateStepCollisionTypeSpy.calledOnceWith(nextHead), true);
-            calculateStepCollisionTypeSpy.restore();
-            
+            assert.equal(calculatePathSpy.calledBefore(calculateCommandSpy), true);
+            calculatePathSpy.restore();
+            calculateCommandSpy.restore();
         });
-        it('should call isAlive after calling Notifier.calculateStepCollisionType', function () {
-            let isAliveSpy = sinon.spy(snake, 'isAlive');
-            let calculateStepCollisionTypeSpy = sinon.spy(mockNotifier, 'calculateStepCollisionType');
+        it("should call calculateCommand with Snake.head and first element of result of calculatePath if it is not undefined or empty", function () {
+            let calculatePathStub = sinon.stub(snake, 'calculatePath');
+            let calculateCommandSpy = sinon.spy(snake, 'calculateCommand');
+            let path = [new IntCoordinate(1, 0), new IntCoordinate(1, 1)];
+            let snakeHead = new IntCoordinate(0, 0);
+            calculatePathStub.returns(path);
+            snake.setState({
+                body: [snakeHead]
+            });
+
             snake.update();
-            assert.equal(isAliveSpy.calledAfter(calculateStepCollisionTypeSpy), true);
-            calculateStepCollisionTypeSpy.restore()
+
+            assert.equal(calculatePathStub.calledBefore(calculateCommandSpy), true);
+            assert.equal(calculateCommandSpy.called, true);
+            assert.equal(calculateCommandSpy.calledWith(snakeHead, path[0]), true);
+
+            calculatePathStub.restore();
+            calculateCommandSpy.restore();
+
         });
+        it('should not call calculateCommand if result of calculatePath is undefined or empty', function () {
+            let calculatePathStub = sinon.stub(snake, 'calculatePath');
+            let calculateCommandSpy = sinon.spy(snake, 'calculateCommand');
+            let path;
+
+            //undefined case
+            path = undefined;
+            calculatePathStub.returns(path);
+
+            snake.update();
+
+            assert.equal(calculateCommandSpy.called, false);
+            calculatePathStub.reset();
+
+            //empty case
+            path = [];
+            calculatePathStub.returns(path);
+
+            snake.update();
+
+            assert.equal(calculateCommandSpy.called, false);
+
+            calculatePathStub.restore();
+            calculateCommandSpy.restore();
+        })
 
         it('should execute result command of calculateCommand if it is not undefined', function () {
             let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
@@ -141,13 +152,17 @@ describe('Integration test of Snake', function () {
             calculateCommandStub.returns(command);
 
             snake.update();
+
             let returnValue = calculateCommandStub.returnValues[0];
             assert.equal(calculateCommandStub.called, true);
             assert.notEqual(returnValue, undefined);
             assert.equal(commandExecuteSpy.called, true);
 
+            calculateCommandStub.restore();
+            commandExecuteSpy.restore();
+
         });
-        it("should execute state.command if it is not undefined and calculateCommand's result is undefined", function () {
+        it("should execute state.command if calculateCommand's result is undefined", function () {
             let command = new DownTurnCommand();
             let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
             let commandExecuteSpy = sinon.spy(command, 'execute');
@@ -156,162 +171,100 @@ describe('Integration test of Snake', function () {
             snake.setState({
                 command: command,
             });
+
             snake.update();
+
             assert.equal(calculateCommandStub.returnValues[0], undefined);
             assert.equal(commandExecuteSpy.called, true);
-        });
-        it("should call the returned command from calculateCommand if it is not undefined and state.command is not undefined", function () {
-            let command = new DownTurnCommand();
-            let calculatedCommand = new UpTurnCommand();
-            let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
-            let commandExecuteSpy = sinon.spy(command, 'execute');
-            let calculatedCommandExecuteSpy = sinon.spy(calculatedCommand, 'execute')
-            calculateCommandStub.returns(calculatedCommand);
-            snake.setState({
-                direction: 'RIGHT',
-                command: command,
-            });
-            snake.update();
-            assert.equal(commandExecuteSpy.called, false);
-            assert.equal(calculatedCommandExecuteSpy.called, true);
-        })
-        it('should call calculateVelocity immediately after calculateCommand if it was called and it returned undefined', function () {
-            let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
-            let calculateVelocitySpy = sinon.spy(snake, 'calculateVelocity')
-            calculateCommandStub.returns(undefined);
 
-            snake.update();
-            let command = calculateCommandStub.returnValues[0];
-            assert.equal(calculateCommandStub.called, true);
-            assert.equal(command, undefined);
-            assert.equal(calculateVelocitySpy.calledImmediatelyAfter(calculateCommandStub), true);
-
+            calculateCommandStub.restore();
+            commandExecuteSpy.restore();
         });
+
         it("should call calculateVelocity with the result of the executed command if the result is not undefined", function () {
+            let calculatePathStub = sinon.stub(snake, 'calculatePath');
             let calculateVelocitySpy = sinon.spy(snake, 'calculateVelocity');
             let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
             let command = new DownTurnCommand();
             let commandExecuteStub = sinon.stub(command, 'execute');
+            let path = [new IntCoordinate(1, 0)];
+            calculatePathStub.returns(path);
             commandExecuteStub.returns('DOWN');
             calculateCommandStub.returns(command);
             snake.setState({
                 direction: 'RIGHT'
             });
+
             snake.update();
 
             assert.equal(calculateCommandStub.called, true);
             let returnDirection = command.execute(snake);
             assert.notEqual(returnDirection, undefined);
             assert.equal(calculateVelocitySpy.calledWith(returnDirection), true);
+
+            calculatePathStub.restore();
+            calculateVelocitySpy.restore();
+            calculateCommandStub.restore();
+            commandExecuteStub.restore();
         });
-        it('should call calculateVelocity with the value snake.status.direction if there was no command executed', function () {
+
+        it('should call calculateVelocity with the value snake.status.direction if there was no command to be executed', function () {
             let calculateVelocitySpy = sinon.spy(snake, 'calculateVelocity');
             let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
+            calculateCommandStub.returns(undefined);
 
-            //forcing calculateCommand to return undefined
             snake.setState({
-                direction: 'RIGHT',
                 command: undefined
             });
+
             snake.update();
+
             let calculatedCommand = calculateCommandStub.returnValues[0];
             assert.equal(calculatedCommand, undefined);
             assert.equal(calculateVelocitySpy.calledWithExactly(snake.state.direction), true);
+
+            calculateVelocitySpy.restore();
+            calculateCommandStub.restore();
         });
 
         it('should call move with the result of calculateVelocity', function () {
-            let calculateVelocitySpy = sinon.spy(snake, 'calculateVelocity');
+            let calculateVelocityStub = sinon.stub(snake, 'calculateVelocity');
             let moveSpy = sinon.spy(snake, 'move');
-
-            snake.update();
-            let velocity = calculateVelocitySpy.returnValues[0];
-            assert.equal(moveSpy.calledAfter(calculateVelocitySpy), true);
-            assert(moveSpy.calledWithExactly(velocity.x, velocity.y), true);
-        });
-
-        it('should call setState immediately after isAlive', function () {
-            let isAliveSpy = sinon.spy(snake, 'isAlive');
-            let setStateSpy = sinon.spy(snake, 'setState');
-            snake.update();
-            assert.equal(setStateSpy.calledImmediatelyAfter(isAliveSpy), true);
-        })
-
-        it('should call setState with the object: {direction: snake.state.direction or the non-undefined result of the executed command, body: result of move, velocity: result of calculateVelocity, path:[IntCoordinates]} ', function () {
-            let setStateSpy = sinon.spy(snake, 'setState');
-            let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
-            let calculateVelocitySpy = sinon.spy(snake, 'calculateVelocity');
-            let moveSpy = sinon.spy(snake, 'move');
-            let pathfinderStub = sinon.stub(snake.state.strategy, 'pathfinder');
-            let command = new DownTurnCommand();
-            let commandExecuteStub = sinon.stub(command, 'execute');
-            calculateCommandStub.returns(undefined);
-            pathfinderStub.returns([new IntCoordinate(1, 1), new IntCoordinate(1, 2)])
-            commandExecuteStub.returns('DOWN');
-            // Where command returns non-undefined
-            snake.setState({
-                direction: 'RIGHT',
-                command: command
-            });
-
-            setStateSpy.resetHistory();
-            snake.update();
-            let commandReturnValue = commandExecuteStub.returnValues[0]
-            let nextBody = moveSpy.returnValues[0];
-            let nextDirection = commandReturnValue || snake.direction;
-            let nextVelocity = calculateVelocitySpy.returnValues[0];
-            let nextPath = pathfinderStub.returnValues[0];
-            let nextState = {
-                velocity: nextVelocity,
-                body: nextBody,
-                direction: nextDirection,
-                path: nextPath,
+            let velocity = {
+                x: 1,
+                y: 0
             };
-            assert.notEqual(commandReturnValue, undefined);
-            assert.equal(nextDirection, commandReturnValue);
-            assert.equal(setStateSpy.calledWith(nextState), true);
+            calculateVelocityStub.returns(velocity);
 
-            //Where command returns undefined
-
-            setStateSpy.resetHistory();
-            calculateVelocitySpy.resetHistory();
-            moveSpy.resetHistory();
-            pathfinderStub.resetHistory();
-            calculateCommandStub.resetHistory();
-            commandExecuteStub.reset();
-
-
-            commandExecuteStub.returns(undefined);
-            snake.setState({
-                direction: 'RIGHT',
-            });
-            setStateSpy.resetHistory();
             snake.update();
 
-            commandReturnValue = commandExecuteStub.returnValues[0];
-            nextBody = moveSpy.returnValues[0];
-            nextDirection = commandReturnValue || snake.direction;
-            nextVelocity = calculateVelocitySpy.returnValues[0];
-            nextPath = pathfinderStub.returnValues[0];
+            assert.equal(moveSpy.calledAfter(calculateVelocityStub), true);
+            assert(moveSpy.calledWithExactly(velocity.x, velocity.y), true);
 
-
-            nextState = {
-                body: nextBody,
-                direction: nextDirection,
-                velocity: nextVelocity,
-                path: nextPath
-            }
-
-            assert.equal(commandReturnValue, undefined);
-            assert.equal(nextDirection, snake.direction);
-            assert.equal(setStateSpy.calledWithExactly(nextState), true);
-
-            setStateSpy.restore();
-            calculateVelocitySpy.restore();
+            calculateVelocityStub.restore();
             moveSpy.restore();
-            pathfinderStub.restore();
         });
+
+        it("should call Notifier.calculateStepCollisionType, once, with the head of move's result body, if notifier is not undefined", function () {
+            let calculateStepCollisionTypeSpy = sinon.spy(mockNotifier, 'calculateStepCollisionType');
+            let moveStub = sinon.stub(snake, 'move');
+            let nextBody = [new IntCoordinate(1, 1), new IntCoordinate(1, 2)];
+            moveStub.returns(nextBody);
+
+            snake.update();
+
+            assert.notEqual(snake.notifier, undefined);
+            assert.equal(calculateStepCollisionTypeSpy.calledAfter(moveStub), true);
+            let nextHead = nextBody[0];
+            assert.equal(calculateStepCollisionTypeSpy.calledOnceWith(nextHead), true);
+
+            moveStub.restore();
+            calculateStepCollisionTypeSpy.restore();
+
+        });
+
         it('should call processNotification if the notificationBuffer is not empty', function () {
-            let processNotificationpy = sinon.spy(snake, 'processNotification');
+            let processNotificationSpy = sinon.spy(snake, 'processNotification');
             let notification = {
                 type: 'TEST',
                 payload: {}
@@ -322,8 +275,26 @@ describe('Integration test of Snake', function () {
             });
             assert.equal(snake.state.notificationBuffer.length > 0, true);
             snake.update();
-            assert.equal(processNotificationpy.called, true);
+            assert.equal(processNotificationSpy.called, true);
+
+            processNotificationSpy.restore();
         });
+
+        it('should not call processNotification if the notificationBuffer is empty', function () {
+            let processNotificationSpy = sinon.spy(snake, 'processNotification');
+
+            snake.setState({
+                notificationBuffer: []
+            });
+            assert.equal(snake.state.notificationBuffer.length == 0, true);
+
+            snake.update();
+
+            assert.equal(processNotificationSpy.called, false);
+
+            processNotificationSpy.restore();
+        });
+
         it('should empty notificationBuffer', function () {
             let processNotificationSpy = sinon.spy(snake, 'processNotification');
             let notifications = [{
@@ -342,34 +313,176 @@ describe('Integration test of Snake', function () {
             assert.equal(processNotificationSpy.calledTwice, true);
             assert.equal(snake.state.notificationBuffer.length, 0);
 
-        })
-        it('if die has been called, isAlive should be false', function () {
-            let dieSpy = sinon.spy(snake, 'die');
+            processNotificationSpy.restore();
+
+        });
+
+        it('should call isAlive immediately after calling processNotification if notificationBuffer was not empty', function () {
+            let isAliveSpy = sinon.spy(snake, 'isAlive');
+            let processNotificationSpy = sinon.spy(snake, 'processNotification');
             let notification = {
-                type: 'WALL_COLLISION'
+                type: 'TEST',
+                payload: {}
             }
-            //forcing WALL_COLLISION notification
             snake.setState({
                 notificationBuffer: [notification]
             });
+
+            assert.notEqual(snake.state.notificationBuffer.length, 0);
+
             snake.update();
-            assert.equal(dieSpy.called, true);
-            let isAlive = snake.isAlive();
-            assert.equal(isAlive, false);
+
+            assert.equal(isAliveSpy.calledImmediatelyAfter(processNotificationSpy), true);
+
+            isAliveSpy.restore();
+            processNotificationSpy.restore();
+        });
+
+        it('should call isAlive immediately after calling Notifier.calculateStepCollisionType if Snake.notifier is not undefined and state.notificationBuffer is empty', function () {
+            let isAliveSpy = sinon.spy(snake, 'isAlive');
+            let calculateStepCollisionTypeSpy = sinon.spy(mockNotifier, 'calculateStepCollisionType');
+
+            snake.setState({
+                notificationBuffer: []
+            });
+
+            assert.notEqual(snake.notifier, undefined);
+            assert.equal(snake.state.notificationBuffer.length, 0)
+
+            snake.update();
+
+            assert.equal(isAliveSpy.calledImmediatelyAfter(calculateStepCollisionTypeSpy), true);
+
+            isAliveSpy.restore();
+            calculateStepCollisionTypeSpy.restore();
+        });
+
+        it('should call isAlive immediately after calling Notifier.calculateStepCollisionType if Snake.notifier is undefined and state.notificationBuffer is empty', function () {
+            let isAliveSpy = sinon.spy(snake, 'isAlive');
+            let moveSpy = sinon.spy(snake, 'move');
+
+            snake.notifier = undefined;
+            snake.setState({
+                notificationBuffer: []
+            });
+
+            assert.equal(snake.notifier, undefined);
+            assert.equal(snake.state.notificationBuffer.length, 0)
+
+            snake.update();
+
+            assert.equal(isAliveSpy.calledImmediatelyAfter(moveSpy), true);
+
+            isAliveSpy.restore();
+            moveSpy.restore();
+        });
+
+        it('should call setState immediately after isAlive', function () {
+            let isAliveSpy = sinon.spy(snake, 'isAlive');
+            let setStateSpy = sinon.spy(snake, 'setState');
+
+            snake.update();
+
+            assert.equal(setStateSpy.calledImmediatelyAfter(isAliveSpy), true);
+
+            isAliveSpy.restore();
+            setStateSpy.restore();
+        });
+
+        it('should call setState with the object: {direction: snake.state.direction or the non-undefined result of the executed command, body: result of move, velocity: result of calculateVelocity, path: result of calculatePath} if isAlive returns true', function () {
+            let isAliveStub = sinon.stub(snake, 'isAlive');
+            let setStateSpy = sinon.spy(snake, 'setState');
+            let calculateCommandStub = sinon.stub(snake, 'calculateCommand');
+            let moveStub = sinon.stub(snake, 'move');
+            let calculatePathStub = sinon.stub(snake, 'calculatePath');
+            let calculateVelocityStub = sinon.stub(snake, 'calculateVelocity');
+            let command = new DownTurnCommand();
+            let commandExecuteSpy = sinon.spy(command, 'execute');
+            let nextBody = [new IntCoordinate(0, 0), new IntCoordinate(1, 0)];
+            let path = [new IntCoordinate(0, 1)];
+            let direction = 'LEFT';
+            let nextVelocity = {
+                x: -1,
+                y: 0
+            }
+            let nextState;
+            calculateVelocityStub.returns(nextVelocity);
+            calculatePathStub.returns(path);
+            moveStub.returns(nextBody);
+            isAliveStub.returns(true);
+
+            //command is executed case
+            calculateCommandStub.returns(command);
+            snake.setState({
+                command: undefined
+            });
+
+            snake.update();
+
+            let commandResult = commandExecuteSpy.returnValues[0];
+            nextState = {
+                direction: commandResult,
+                body: nextBody,
+                velocity: nextVelocity,
+                path: path
+            }
+            assert.equal(commandExecuteSpy.called, true);
+            assert.notEqual(commandResult, undefined);
+            assert.equal(setStateSpy.calledWith(nextState), true);
+
+            calculateCommandStub.reset();
+            setStateSpy.resetHistory();
+            commandExecuteSpy.resetHistory();
+
+            //command not executed case
+            calculateCommandStub.returns(undefined);
+            snake.setState({
+                command: undefined,
+                direction: direction
+            });
+
+            snake.update();
+
+            nextState = {
+                direction: direction,
+                body: nextBody,
+                velocity: nextVelocity,
+                path: path
+            }
+            assert.equal(commandExecuteSpy.called, false);
+            assert.notEqual(commandResult, undefined);
+            assert.equal(setStateSpy.calledWith(nextState), true);
+
         });
 
     });
-    describe('function update where isAlive = false', function () {
-        it('should not change the inner state of snake', function () {
+    describe('function update where isAlive() = false', function () {
+        it('should not call setState', function () {
             snake.setState({
                 status: 'DEAD',
-            })
-            let originalState = cloneDeep(snake.state);
+            });
+
             snake.update();
-            assert.equal(snake.isAlive(), false);
-            assert.deepEqual(snake.state, originalState);
+
+            let setStateSpy = sinon.spy(snake, 'setState');
+            assert.equal(setStateSpy.called, false)
+        });
+        it('should not call calculatePath, calculateVelocity or move', function () {
+            let calculatePathSpy = sinon.spy(snake, 'calculatePath');
+            let calculateVelocitySpy = sinon.spy(snake, 'calculateVelocity');
+            let moveSpy = sinon.spy(snake, 'move');
+
+            assert.equal(calculatePathSpy.called, false);
+            assert.equal(calculateVelocitySpy.called, false);
+            assert.equal(moveSpy.called, false);
+
+            calculatePathSpy.restore();
+            calculateVelocitySpy.restore();
+            moveSpy.restore();
+
         });
     });
+
     describe('function processNotification', function () {
         it("Notification: PILL_COLLISION.Should call eat with payload Pill's pillValue and append the body in nextState with result", function () {
             let eatSpy = sinon.spy(snake, 'eat');

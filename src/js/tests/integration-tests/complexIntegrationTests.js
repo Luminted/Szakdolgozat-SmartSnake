@@ -16,13 +16,6 @@ describe('Running complex integration tests', function () {
         update() {}
         reset() {}
     }
-    let model;
-    let snake;
-    let pill;
-    let board;
-    let notifier;
-    let observers;
-    let mockObserverEntity;
     let mockStrategiesIndex = {
         mockStrategy1: {
             name: "mockStrategy1"
@@ -35,9 +28,12 @@ describe('Running complex integration tests', function () {
 
         },
     }
+    let mockCallbacks = {
+        test: function(){}
+    }
     let config = {
         main: {
-            speed: "10"
+            simulationSpeed: "10"
         },
         boardConfig: {
             width: "4",
@@ -57,6 +53,10 @@ describe('Running complex integration tests', function () {
             startPosY: "1"
         }]
     }
+
+    let model;
+    let mockObserverEntity;
+    
     let curledUpBody = [new IntCoordinate(1,1), new IntCoordinate(2,1), new IntCoordinate(2,2), new IntCoordinate(1,2), new IntCoordinate(0,2)]
     let upperLeftCornerBody = [new IntCoordinate(0,0)];
     let lowerLeftCornerBody = [new IntCoordinate(0,3)];
@@ -66,16 +66,8 @@ describe('Running complex integration tests', function () {
 
     beforeEach(function setUp(){
         mockObserverEntity = new MockObserverEntityClass();
-        model = new Model(config, mockStrategiesIndex);
-        notifier = model.getSubjectsList().notifier;
-        let entityList = model.getEntityList();
-        pill  = entityList.pill;
-        board = entityList.board;
-        snake = entityList.snake;
+        model = new Model(mockCallbacks, config, mockStrategiesIndex);
         notifier.subscribe(mockObserverEntity);
-        observers = notifier.observers;
-        snake.state.strategy = undefined;
-
     });
 
     describe('Collisions', function () {

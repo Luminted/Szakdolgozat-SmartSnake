@@ -4,17 +4,19 @@
 import Mainloop from 'mainloop.js';
 import CanvasWrapper from './canvasWrapper';
 import Model from './model';
+import strategies from './pathfinding-algorithms/index.js';
 
 import config from '../config/config.json';
+
 
 window.onload = () => {
     let viewPort;
     let viewPortWrapperElement;
     let canvas;
-
-    let state = {}
+    let state = {};
+    let callbacks = {};
     initViewPort();
-    const model = new Model(config);
+    const model = new Model(callbacks, config,strategies);
     initComponents(config.main);
 
 
