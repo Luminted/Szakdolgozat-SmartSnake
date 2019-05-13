@@ -1,0 +1,14 @@
+{
+    "events": {
+        "start": "rollup --config rollup.config.js",
+        "restart": "rollup --config rollup.config.js"
+
+    },
+    "ignore": [
+        ".git",
+        "node_modules/**/node_modules",
+        "*.bundle.*",
+        "env.json",
+        "test/"
+    ]
+}

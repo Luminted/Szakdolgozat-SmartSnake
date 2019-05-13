@@ -1,7 +1,7 @@
 export default class ObserverEntity {
     constructor() {
         if (new.target === ObserverEntity) {
-            throw new Error("Abstract class. Cannot be instantiated!");
+            throw new Error("Abstract class cannot be instantiated!");
         }
 
         if (this.update === void 0 || typeof this.update !== "function") {

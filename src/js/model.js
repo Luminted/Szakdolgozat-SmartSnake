@@ -1,126 +1,211 @@
 import Board from './board.js';
 import Snake from './snake.js';
 import Pill from './pill.js';
-import Physics from './physics';
+import Notifier from './notifier';
 
-import LeftTurnCommand from './Commands/LeftTurnCommand';
-import RightTurnCommand from './Commands/RightTurnCommand';
-import DownTurnCommand from './Commands/DownTurnCommand';
-import UpTurnCommand from './Commands/UpTurnCommand';
+import ConfigError from './errors/ConfigError.js';
 
-import AStart from './pathfinding-algorithms/AStar';
-
-import log from 'loglevel';
 
 export default class Model {
-    constructor() {
-        this.Commands = {};
-
-        this.Commands.LeftTurn = new LeftTurnCommand();
-        this.Commands.RightTurn = new RightTurnCommand();
-        this.Commands.DownTurn = new DownTurnCommand();
-        this.Commands.UpTurn = new UpTurnCommand();
-
+    constructor(config, strategies) {
         this.getEntityList = this.getEntityList.bind(this);
-        this.getSubjectSubscribeFunctions = this.getSubjectSubscribeFunctions.bind(this);
-        this.addEventListener = this.setupKeyboardCommands.bind(this);
-        this.update = this.update.bind(this);
-        this.reset = this.reset.bind(this);
+        this.getEntityByID = this.getEntityByID.bind(this);
+        this.propagateError = this.propagateError.bind(this);
+        this.propagateRuntime = this.propagateRuntime.bind(this);
+        
 
-        this.Entities = {};
-        this.Subjects = {}
-        this.callbacks = {
+        this.passedDownCallbacks = {
             getEntityList: this.getEntityList,
-            getSubjectSubscribeFunctions: this.getSubjectSubscribeFunctions
+            getEntityByID: this.getEntityByID,
+            propagateError: this.propagateError,
+            propagateRuntime: this.propagateRuntime
         }
+        
+        this.notifier = new Notifier(this.passedDownCallbacks);
+        this.strategies = strategies;
+        
+        let parsedConfig = this.parseConfig(config);
+        this.runtimes = {};
 
-        this._physics = new Physics(this.callbacks);
-        this.Subjects.physics = this._physics;
-
-        //TODO: Do something about initializatuion prevedence
-
-        const _snake = new Snake(this.callbacks, 10);
-        this.Entities.snake = _snake;
-        const _board = new Board(this.callbacks);
-        this.Entities.board = _board;
-        const _pill = new Pill(this.callbacks);
-        this.Entities.pill = _pill;
-
-
-        this.addEventListener = this.setupKeyboardCommands.bind(this);
-        this.setupKeyboardCommands();
+        this.config = config;
+        this.simulationSpeed = parsedConfig.simulationSpeed;
+        this.Entities = {
+            snakes: parsedConfig.snakes,
+            pills: parsedConfig.pills,
+            board: parsedConfig.board,
+        };
+        
     }
 
     update() {
-        if (this.Entities.snake.isAlive()) {
-            this.Entities.snake.update();
-            this._physics.update();
-            this.Entities.pill.update();
-            this.Entities.board.update();
+        if (!this.isGameOver()) {
+            let snakes = this.Entities.snakes;
+            let pills = this.Entities.pills;
+            let board = this.Entities.board;
+
+            for(let snake of snakes){
+                snake.update();
+            }
+            for(let pill of pills){
+                pill.update();
+
+            }
+            board.update();
+
         }
     }
 
     reset() {
-        this.Entities.board.reset();
-        this.Entities.snake.reset();
-        this.Entities.pill.reset();
-        //log.info('>>>>>>Game Reset<<<<<<')
+        let snakes = this.Entities.snakes;
+            let pills = this.Entities.pills;
+            let board = this.Entities.board;
+            for(let snake of snakes){
+                snake.reset();
+            }
+            for(let pill of pills){
+                pill.reset();
+            }
+            board.reset();
+    }
+
+    snakeFactory(snakeConfig, notifier) {
+        let strategyName = snakeConfig.strategy;
+        let strategyType = this.strategies[strategyName];
+        let strategy = new strategyType(this.passedDownCallbacks);
+        let snake = new Snake(this.passedDownCallbacks, snakeConfig, strategy, notifier);
+        return snake;
+    }
+
+    isGameOver(){
+        let isGameOver = true;
+        let snakes = this.Entities.snakes;
+        for(let snake of snakes){
+            isGameOver = isGameOver && !(snake.isAlive());
+        }
+        return isGameOver;
+    }
+
+    parseConfig(config) {
+        let parsedConfig = {}
+        let enrichedConfig = this.enrichConfig(config);
+        let snakeConfigs = enrichedConfig.snakeConfigs;
+        let pillConfigs = enrichedConfig.pillConfigs;
+        let boardConfig = enrichedConfig.boardConfig;
+        let mainConfig = enrichedConfig.main;
+
+        if (snakeConfigs) {
+            if (Array.isArray(snakeConfigs)) {
+                let snakes = [];
+                for (let snakeConfig of snakeConfigs) {
+                    if (this.strategies[snakeConfig.strategy]) {
+                        let snake = this.snakeFactory(snakeConfig, this.notifier);
+                        snakes.push(snake);
+                    } else {
+                        throw new ConfigError("snakeConfig's strategy is not in the index!");
+                    }
+                }
+                parsedConfig.snakes = snakes;
+            } else {
+                throw new ConfigError('snakeConfigs field of config should be an Array!');
+            }
+        }
+        if (pillConfigs) {
+            if (Array.isArray(pillConfigs)) {
+                let pills = [];
+                for (let pillConfig of pillConfigs) {
+                    let pill = new Pill(this.passedDownCallbacks, pillConfig, this.notifier);
+                    pills.push(pill);
+                }
+                parsedConfig.pills = pills;
+            } else {
+                throw new ConfigError('pillConfigs field of config should be an Array!');
+            }
+        }
+        if (boardConfig) {
+            if (typeof boardConfig == 'object') {
+                let board = new Board(this.passedDownCallbacks, boardConfig);
+                parsedConfig.board = board;
+            } else {
+                throw new ConfigError('boardConfig field of config should be an Object!');
+            }
+        }
+        if (mainConfig) {
+            if (mainConfig.simulationSpeed) {
+                let simulationSpeed = Number(mainConfig.simulationSpeed);
+                if (Number.isInteger(simulationSpeed)) {
+                    parsedConfig.simulationSpeed = simulationSpeed;
+                } else {
+                    throw new ConfigError('simulationSpeed value should be Integer!');
+                }
+            } else {
+                throw new ConfigError('Missing main config field simulationSpeed!');
+            }
+        }
+
+        return parsedConfig;
+    }
+
+    enrichConfig(config) {
+        let boardConfig = config.boardConfig;
+        let limitX = 0;
+        let limitY = 0;
+        let pillConfigs = config.pillConfigs;
+        let snakeConfigs = config.snakeConfigs;
+        if (boardConfig) {
+            limitX = boardConfig.width || limitX;
+            limitY = boardConfig.height || limitY;
+        }
+        if (pillConfigs && Array.isArray(pillConfigs)) {
+            for (let pillConfig of pillConfigs) {
+                pillConfig.limitX = limitX;
+                pillConfig.limitY = limitY;
+            }
+        }
+        if (snakeConfigs && Array.isArray(snakeConfigs)) {
+            for (let snakeConfig of snakeConfigs) {
+                snakeConfig.limitX = limitX;
+                snakeConfig.limitY = limitY;
+            }
+        }
+        return config
     }
 
 
-    //*************************************************** CALLBACCKS *******************************************************************************//
+    //*************************************************** CALLBACKS *******************************************************************************//
+
+    propagateRuntime(snakeID, runtime){
+        this.runtimes[snakeID] = runtime;
+    }
 
     getEntityList() {
         return this.Entities;
     }
 
-    getSubjectSubscribeFunctions() {
-        let callbacks = {};
-        for (let subject in this.Subjects) {
-            callbacks[subject] = {};
-            callbacks[subject].subscribe = this.Subjects[subject].subscibe;
+    propagateError(error){
+        if(error instanceof Error){
+            return error;
         }
-        return callbacks;
+        return undefined
     }
 
-    //************************************************EVENTLISTENERS****************************************************************************
-
-    //TODO Move this in a separate file
-    setupKeyboardCommands() {
-        let commands = this.Commands;
-        let snake = this.Entities.snake;
-        document.addEventListener('keydown', (event) => {
-            switch (event.key) {
-                case 'ArrowLeft':
-                    event.preventDefault();
-                    snake.setState({
-                        command: commands.LeftTurn
-                    })
-                    break;
-                case 'ArrowUp':
-                    event.preventDefault();
-                    snake.setState({
-                        command: commands.UpTurn
-                    })
-                    break;
-                case 'ArrowRight':
-                    event.preventDefault();
-                    snake.setState({
-                        command: commands.RightTurn
-                    })
-                    break;
-                case 'ArrowDown':
-                    event.preventDefault();
-                    snake.setState({
-                        command: commands.DownTurn
-                    })
-                    break;
-                case 'r':
-                    event.preventDefault();
-                    this.reset();
-                    break;
+    getEntityByID(ID){
+        let returnEntity;
+        let snakes = this.Entities.snakes;
+        for(let snake of snakes){
+            if(snake.ID == ID){
+                returnEntity = snake;
             }
-        }, false);
+        }
+        let pills = this.Entities.pills;
+        for(let pill of pills){
+            if(pill.ID == ID){
+                returnEntity = pill;
+            }
+        }
+        let board = this.Entities.board;
+        if(board.ID == ID){
+            returnEntity = board;
+        }
+        return returnEntity;
     }
-
 }

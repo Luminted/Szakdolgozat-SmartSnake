@@ -1,9 +1,8 @@
-"use strict"
+//'use strict'
 
 import Command from '../AbstractClasses/Command';
-import Snake from '../snake';
 
-import log from 'loglevel';
+//import log from 'loglevel';
 
 export default class DownTurnCommand extends Command{
     constructor(){
@@ -11,10 +10,6 @@ export default class DownTurnCommand extends Command{
     }
 
     execute(snake){
-        if(!(snake instanceof Snake)){
-            //log.error('Not a Snake!');
-        }else{
-            snake.handleInput('DOWN');
-        }
+        return snake.handleInput('DOWN');
     }
 }

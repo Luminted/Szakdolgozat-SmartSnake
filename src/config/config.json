@@ -1,0 +1,30 @@
+{
+    "main":{
+        "simulationSpeed":10
+    },
+    "boardConfig":{
+        "width": 100,
+        "height": 100
+    },
+    "snakeConfigs": [{
+        "baseLength": "1",
+        "startX": "0",
+        "startY": "0",
+        "startDirection": "RIGHT",
+        "startVelocity": "1",
+        "strategy": "plainAStarStrategy"
+    },
+    {
+        "baseLength": "1",
+        "startX": "20",
+        "startY": "20",
+        "startDirection": "LEFT",
+        "startVelocity": "1",
+        "strategy": "plainAStarStrategy"
+    }],
+    "pillConfigs": [{
+        "pillValue": 1,
+        "startPosX": 15,
+        "startPosY": 15
+    }]
+}
