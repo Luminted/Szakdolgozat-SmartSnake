@@ -4,8 +4,9 @@
   "description": "Snake játék megvalósítása útvonalkereséssel",
   "main": "./src/js/main.js",
   "scripts": {
-    "serve": "RUN_ENV=browser node env.js; nodemon ./server.js --config nodemon.json",
-    "test": "RUN_ENV=test node env.js; npx mocha --require babel-core/register ./src/js/tests/**/index.js",
+    "testserve": "RUN_ENV=dist node ./server.js",
+    "serve": "RUN_ENV=browser nodemon ./server.js --config nodemon.json",
+    "test": "RUN_ENV=test npx mocha --require babel-core/register ./src/js/tests/**/index.js",
     "setenv": "RUN_ENV=test node env.js"
   },
   "repository": {
