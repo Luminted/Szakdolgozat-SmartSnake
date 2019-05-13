@@ -12,6 +12,7 @@ import {
     idGenerator
 } from './customUtils.js';
 import cloneDeep from 'lodash/cloneDeep';
+import { start } from 'repl';
 
 export default class Snake extends ObserverEntity {
     constructor(callbacks, config, strategy, notifier) {
@@ -28,10 +29,11 @@ export default class Snake extends ObserverEntity {
         this.state.notificationBuffer = [];
         this.state.status = "ALIVE";
         this.state.strategy = strategy;
-        this.state.path = undefined;
+        this.state.path = [];
         Object.assign(this.state, parsedConfig);
 
         this.config = config;
+        this.timer = new Date();
         this.callbacks = callbacks;
         if (notifier) {
             this.notifier = notifier;
@@ -40,13 +42,17 @@ export default class Snake extends ObserverEntity {
     }
 
     parseConfig(config) {
-        if (config.startDirection == undefined || config.startVelocity == undefined || config.startX == undefined || config.startY == undefined || config.baseLength == undefined) {
-            throw new ConfigError('Missing fields in configuration. Needed fields: startdirection: (LEFT | RIGHT | UP | DOWN), startVelocity: integer, startX: integer, startY:integer, baseLength: integer');
+        if (config.startDirection == undefined || config.startVelocity == undefined || config.startX == undefined || config.startY == undefined || config.baseLength == undefined || config.limitX == undefined || config.limitY == undefined) {
+            throw new ConfigError('Missing configuration or missing fields in configuration. Needed fields: startdirection: (LEFT | RIGHT | UP | DOWN), startVelocity: integer, startX: integer, startY:integer, baseLength: integer, limitX: integer, limitY: integer');
         }
         let parsedConfig = {}
         parsedConfig.body = [];
         parsedConfig.direction = config.startDirection;
         parsedConfig.baseVelocity = Number(config.startVelocity);
+        parsedConfig.limits = {
+            x: Number(config.limitX),
+            y: Number(config.limitY)
+        }
         for (let i = 0; i < config.baseLength; ++i) {
             parsedConfig.body[i] = new IntCoordinate(Number(config.startX), Number(config.startY));
         }
@@ -80,7 +86,7 @@ export default class Snake extends ObserverEntity {
             nextBody = this.move(nextVelocity.x, nextVelocity.y);
             nextStep = nextBody[0];
             if (notifier) {
-                notifier.calculateStepCollisionType(nextStep);
+                notifier.calculateStepCollisionType(nextStep, this.ID);
             }
             Object.assign(nextState, {
                 direction: nextDirection,
@@ -137,44 +143,53 @@ export default class Snake extends ObserverEntity {
         let eventType = event.type
         switch (eventType) {
             case ('PILL_COLLISION'): {
-                let storedNotification = {
-                    type: eventType,
-                    payload: {
-                        entity: entity
+                if (entity.ID == this.ID) {
+                    let storedNotification = {
+                        type: eventType,
+                        payload: {
+                            entity: entity,
+                            pill: event.pill,
+                        }
                     }
+                    this.storeNotification(storedNotification);
                 }
-                this.storeNotification(storedNotification);
                 break;
             }
             case ('WALL_COLLISION'): {
-                let storedNotification = {
-                    type: eventType,
-                    payload: {
-                        entity: entity
+                if (entity.ID == this.ID) {
+                    let storedNotification = {
+                        type: eventType,
+                        payload: {
+                            entity: entity
+                        }
                     }
+                    this.storeNotification(storedNotification);
                 }
-                this.storeNotification(storedNotification);
                 break;
             }
             case ('BODY_COLLISION'): {
-                let storedNotification = {
-                    type: eventType,
-                    payload: {
-                        entity: entity
+                if (entity.ID == this.ID) {
+                    let storedNotification = {
+                        type: eventType,
+                        payload: {
+                            entity: entity
+                        }
                     }
+                    this.storeNotification(storedNotification);
                 }
-                this.storeNotification(storedNotification);
 
                 break;
             }
             case ('TARGET_REACHED'): {
-                let storedNotification = {
-                    type: eventType,
-                    payload: {
-                        entity: entity
+                if (entity.ID == this.ID) {
+                    let storedNotification = {
+                        type: eventType,
+                        payload: {
+                            entity: entity
+                        }
                     }
+                    this.storeNotification(storedNotification);
                 }
-                this.storeNotification(storedNotification);
                 break;
             }
         }
@@ -185,7 +200,7 @@ export default class Snake extends ObserverEntity {
         let payload = notification.payload
         switch (notification.type) {
             case ('PILL_COLLISION'):
-                let result = this.eat(payload.entity.pillValue);
+                let result = this.eat(payload.pill.pillValue);
                 nextState.body.push(...result);
                 break;
             case ('WALL_COLLISION'):
@@ -196,8 +211,9 @@ export default class Snake extends ObserverEntity {
                 break;
             case ('TARGET_REACHED'):
                 let strategy = this.state.strategy;
-                if (strategy && strategy.targetSetter) {
-                    strategy.targetSetter(this);
+                if (strategy && strategy.calculateTarget) {
+                    let newTarget = strategy.calculateTarget(this);
+                    nextState.target = newTarget;
                 }
         }
         return notificationResult;
@@ -263,7 +279,12 @@ export default class Snake extends ObserverEntity {
         let head = this.head;
         let nextPosX = head.coordinates.x + velocityX;
         let nextPosY = head.coordinates.y + velocityY;
+        let limits = this.state.limits;
 
+
+        if(nextPosX < 0 || nextPosX >= limits.x || nextPosY < 0 || nextPosY >= limits.y){
+            return new IntCoordinate(nextPosX, nextPosY, true);
+        }
         return new IntCoordinate(nextPosX, nextPosY);
     }
 
@@ -293,7 +314,6 @@ export default class Snake extends ObserverEntity {
         let additionalNodes = [];
         let tailNode = this.body[this.bodyLength - 1];
         let tailNodeCoordinates = tailNode.coordinates;
-
         for (let i = 0; i < gain; i++) {
             additionalNodes.push(new IntCoordinate(tailNodeCoordinates.x, tailNodeCoordinates.y));
         }
@@ -305,7 +325,12 @@ export default class Snake extends ObserverEntity {
         let strategy = this.state.strategy;
         let path;
         if (strategy && strategy.pathfinder) {
-            path = strategy.pathfinder();
+            let startTime = this.timer.getTime();
+            path = strategy.pathfinder(this);
+            let endTime = this.timer.getTime();
+            this.timer.get
+            let runtime = endTime - startTime;
+            this.callbacks.propagateRuntime(this.ID, runtime); 
         }
         return path;
     }
@@ -364,5 +389,9 @@ export default class Snake extends ObserverEntity {
 
     get ID() {
         return this.state.ID;
+    }
+
+    get path(){
+        return this.state.path;
     }
 }

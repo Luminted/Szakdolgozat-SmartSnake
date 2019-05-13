@@ -48,11 +48,11 @@ describe('Unit testing Notifier class', function(){
     });
 
     describe('contructor', function(){
-        it('should have the following inner state after being instantiated with callbacks -> callbacks: callbacks, observers: Set, nextStepBuffer: []. Observers and nextStepBuffer should be empty.', function(){
+        it('should have the following inner state after being instantiated with callbacks -> callbacks: callbacks, observers: Set, lastNodeBuffer: Object{key: IntCoordinate}. Observers and lastNodeBuffer should be empty.', function(){
             let newNotifier = new Notifier(mockCallBacks);
             assert.equal(newNotifier.observers instanceof Set, true);
             assert.equal(newNotifier.observers.size, 0);
-            assert.deepEqual(newNotifier.nextStepBuffer, []);
+            assert.deepEqual(newNotifier.lastNodeBuffer, {});
             assert.deepEqual(newNotifier.callbacks, mockCallBacks);
         });
         it('should not depend on callbacks', function(){
@@ -110,33 +110,33 @@ describe('Unit testing Notifier class', function(){
 
         });
     });
-    describe('function addNextStepToBuffer', function(){
-        it('should append ID: nextStep to nextStepBUffer and return true if ID is not undefined and nextStep is instance of IntCoordinate', function(){
+    describe('function storeLastNode', function(){
+        it('should append ID: nextStep to lastNodeBuffer and return true if ID is not undefined and nextStep is instance of IntCoordinate', function(){
             let nextStep = new IntCoordinate(1,1);
             let ID = "asd123";
 
-            let returnValue = notifier.addNextStepToBuffer(ID,nextStep);
-            assert.equal(notifier.nextStepBuffer[ID], nextStep);
+            let returnValue = notifier.storeLastNode(ID,nextStep);
+            assert.equal(notifier.lastNodeBuffer[ID], nextStep);
             assert.equal(returnValue, true);
         });
-        it('should return false and do no changes to nextStepBuffer, if ID is undefined or nextStep is not instance of IntCoordinate',function(){
+        it('should return false and do no changes to lastNodeBuffer, if ID is undefined or nextStep is not instance of IntCoordinate',function(){
             let nextStep;
             let ID;
             let returnValue;
-            let originalBuffer = cloneDeep(notifier.nextStepBuffer);
+            let originalBuffer = cloneDeep(notifier.lastNodeBuffer);
 
             //ID is undefined
             nextStep = new IntCoordinate(1,1);
             ID = undefined
-            returnValue = notifier.addNextStepToBuffer(ID,nextStep);
-            assert.deepEqual(notifier.nextStepBuffer, originalBuffer);
+            returnValue = notifier.storeLastNode(ID,nextStep);
+            assert.deepEqual(notifier.lastNodeBuffer, originalBuffer);
             assert.equal(returnValue, false);
 
             //nextStep is not instance of IntCoordinate
             nextStep = {};
             ID = "123"
-            returnValue = notifier.addNextStepToBuffer(ID,nextStep);
-            assert.deepEqual(notifier.nextStepBuffer, originalBuffer);
+            returnValue = notifier.storeLastNode(ID,nextStep);
+            assert.deepEqual(notifier.lastNodeBuffer, originalBuffer);
             assert.equal(returnValue, false);
 
         })

@@ -49,7 +49,7 @@ describe('Unit testing IntCoordinate class', function(){
         })
     });
     describe('getter coordinates', function(){
-        it('if this.nullPosition is false, should return an object with fields x: Integer, y: Integer', function(){
+        it('should return an object with fields x: this.x, y: this.y', function(){
             let x = 1;
             let y = 1;
             let coordinate = new IntCoordinate(x,y);
@@ -57,11 +57,6 @@ describe('Unit testing IntCoordinate class', function(){
             assert.notEqual(coordinate.coordinates, undefined);
             assert.equal(coordinate.coordinates.x, x);
             assert.equal(coordinate.coordinates.y, y);
-        });
-        it('should return undefined if this.nullPosition if true',function(){
-            let coordinate = new IntCoordinate(1,1,true);
-            assert.equal(coordinate.nullPosition, true);
-            assert.equal(coordinate.coordinates, undefined);
         });
     });
 })

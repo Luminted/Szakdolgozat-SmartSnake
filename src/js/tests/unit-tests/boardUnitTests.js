@@ -18,7 +18,7 @@ export default {
         });
 
         describe('constructor', function(){
-            it('should have the following inner state after instatiating it with a full config and callbacks -> callbacks: callbacks, config: config, state.ID: idGenerator(), state.initialTiles: equals parseConfig produced tiles field and state should also contain the result of parsedConfig.', function(){
+            it('should have the following inner state after instatiating it with a full config and callbacks -> callbacks: callbacks, config: config, initialTiles: equals parseConfig produced tiles field, state.ID: idGenerator(), and state should also contain the result of parsedConfig.', function(){
                 let newBoard = new Board(mockCallbacks, boardConfig);
                 assert.deepEqual(newBoard.config, boardConfig);
                 assert.deepEqual(newBoard.callbacks, mockCallbacks);
@@ -27,7 +27,7 @@ export default {
                 for(let key of Object.keys(parsedConfig)){
                     assert.deepEqual(newBoard.state[key], parsedConfig[key]);
                 }
-                assert.deepEqual(newBoard.state.initialTiles, newBoard.state.tiles);
+                assert.deepEqual(newBoard.initialTiles, newBoard.state.tiles);
             });
             it('should not depend on callbacks', function(){
                 assert.doesNotThrow(() => new Board(undefined, boardConfig), Error);

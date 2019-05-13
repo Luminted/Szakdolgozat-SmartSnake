@@ -17,6 +17,7 @@ export default class Pill extends ObserverEntity {
         this.config = config;
 
         if (notifier) {
+            this.notifier = notifier;
             notifier.subscribe(this);
         }
     }
@@ -68,8 +69,8 @@ export default class Pill extends ObserverEntity {
     }
 
     calculateNewRandomPosition() {
-        let limitX = this.limits.x;
-        let limitY = this.limits.x;
+        let limitX = this.state.limits.x;
+        let limitY = this.state.limits.x;
         let snakes = this.callbacks.getEntityList().snakes;
         let appendedSnakeBodies = [];
 
@@ -80,7 +81,7 @@ export default class Pill extends ObserverEntity {
             return new IntCoordinate(undefined, undefined, true);
         } else {
             let freePositions = this.calculateFreePositions(appendedSnakeBodies);
-            let randomPosIndex = Math.trunc(Math.random() * limitX) + Math.trunc(Math.random() * limitY);
+            let randomPosIndex = Math.trunc(Math.random() * (freePositions.length - 1));
             let randomPosition = freePositions[randomPosIndex];
             return new IntCoordinate(randomPosition.x, randomPosition.y);
         }
@@ -88,8 +89,8 @@ export default class Pill extends ObserverEntity {
     }
 
     calculateFreePositions(snakeBody) {
-        let limitX = this.limits.x;
-        let limitY = this.limits.x;
+        let limitX = this.state.limits.x;
+        let limitY = this.state.limits.x;
         let positions = []
         for (let i = 0; i < limitX; i++) {
             for (let j = 0; j < limitY; j++) {
@@ -113,10 +114,6 @@ export default class Pill extends ObserverEntity {
 
     get pillValue() {
         return this.state.pillValue;
-    }
-
-    get limits() {
-        return this.state.limits;
     }
 
     get ID(){

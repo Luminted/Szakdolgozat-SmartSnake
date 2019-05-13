@@ -11,7 +11,7 @@ export default class Notifier extends Subject {
 
         this.observers = new Set();
         this.callbacks = callbacks;
-        this.nextStepBuffer = {};
+        this.lastNodeBuffer = {};
 
         this.subscribe = this.subscribe.bind(this);
     }
@@ -22,16 +22,18 @@ export default class Notifier extends Subject {
         const pills = this.callbacks.getEntityList().pills;
         let callerSnake = this.callbacks.getEntityByID(callerID);
 
-        this.addNextStepToBuffer(callerID, nextStep);
+        this.storeLastNode(callerID, callerSnake.endOfBody);
 
-        if (nextStep.coordinates.x < 0 || nextStep.coordinates.y >= board.state.height || nextStep.coordinates.y < 0 || nextStep.coordinates.x >= board.state.width) {
-            console.log('<---------------WALL_COLLISION_ACITON--------------->');
-            this.observers.forEach((observer) => {
-                let caller = this.callbacks.getEntityByID(callerID);
-                observer.onNotify(caller, {
-                    type: "WALL_COLLISION"
-                });
-            })
+        if (board) {
+            if (nextStep.nullPosition == true) {
+                console.log('<---------------WALL_COLLISION_ACITON--------------->');
+                this.observers.forEach((observer) => {
+                    let caller = this.callbacks.getEntityByID(callerID);
+                    observer.onNotify(caller, {
+                        type: "WALL_COLLISION"
+                    });
+                })
+            }
         }
 
         for (let pill of pills) {
@@ -39,9 +41,10 @@ export default class Notifier extends Subject {
                 if (pill.position.coordinates.x === nextStep.coordinates.x && pill.position.coordinates.y === nextStep.coordinates.y) {
                     console.log('<---------------PILL_COLLISION_ACITON--------------->');
                     this.observers.forEach((observer) => {
-                        observer.onNotify(pill, {
+                        let caller = this.callbacks.getEntityByID(callerID);
+                        observer.onNotify(caller, {
                             type: 'PILL_COLLISION',
-                            pillValue: pill.pillValue
+                            pill: pill
                         });
                     });
                 }
@@ -60,11 +63,16 @@ export default class Notifier extends Subject {
 
         }
 
-        let lastNodes = []
+        let lastNodes = {}
         for (let snake of snakes) {
-            lastNodes.push(snake.endOfBody);
+            lastNodes[snake.ID] = snake.endOfBody;
         }
-        if (!lastNodes.includes(nextStep)) {
+        Object.assign(lastNodes, this.lastNodeBuffer);
+        let includes = false;
+        for(let key of Object.keys(lastNodes)){
+            includes = includes || (lastNodes[key].coordinates.x == nextStep.coordinates.x && lastNodes[key].coordinates.y == nextStep.coordinates.y);
+        }
+        if (!includes) {
             for (let snake of snakes) {
                 for (let node of snake.body) {
                     if (nextStep.coordinates.x === node.coordinates.x && nextStep.coordinates.y === node.coordinates.y) {
@@ -81,29 +89,8 @@ export default class Notifier extends Subject {
             }
         }
 
-        let nextStepBufferIDs = Object.keys(this.nextStepBuffer);
-        let nextStepBufferLength = nextStepBufferIDs.length;
-        console.log(snakes.length == nextStepBufferLength, snakes.length, nextStepBufferLength);
-        if(snakes.length == nextStepBufferLength){
-            for(let i = 0; i < nextStepBufferLength; i++){
-                let currID = nextStepBufferIDs[i];
-                let isMatching = false;
-                let currIDList = nextStepBufferIDs.filter((id) => id != currID);
-                while(!isMatching){
-                    for(let element of currIDList){
-                        isMatching = isMatching || this.nextStepBuffer[element] == this.nextStepBuffer[currID];
-                    }
-                }
-                if(isMatching){
-                    let snake = this.callbacks.getEntityByID(currID);
-                    this.observers.forEach((observer) => {
-                        observer.onNotify(snake, {
-                            type: 'BODY_COLLISION'
-                        });
-                    })
-                }
-            }
-            this.nextStepBuffer = {};
+        if(snakes.length == Object.keys(this.lastNodeBuffer).length){
+            this.lastNodeBuffer = {};
         }
     }
 
@@ -119,9 +106,9 @@ export default class Notifier extends Subject {
         this.observers.delete(observer)
     }
 
-    addNextStepToBuffer(ID, nextStep){
-        if(ID && nextStep instanceof IntCoordinate){
-            this.nextStepBuffer[ID] = nextStep;
+    storeLastNode(ID, lastNode) {
+        if (ID && lastNode instanceof IntCoordinate) {
+            this.lastNodeBuffer[ID] = lastNode;
             return true;
         }
         return false;

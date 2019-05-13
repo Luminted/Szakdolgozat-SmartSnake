@@ -15,7 +15,9 @@ describe('Unit testing Command classes', function(){
             startY: "0",
             startDirection: 'RIGHT',
             startVelocity: "1",
-            strategy: "AStar"
+            strategy: "AStar",
+            limitX: "3",
+            limitY: "3"
     }
     beforeEach(function setUp(){
         snake = new Snake({},snakeConfig);

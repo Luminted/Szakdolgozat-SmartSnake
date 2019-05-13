@@ -14,7 +14,7 @@ export default class Board extends Entity {
         let parsedConfig = this.parseConfig(config);
         Object.assign(this.state, parsedConfig);
         this.callbacks = callbacks;
-        this.state.initialTiles = cloneDeep(this.state.tiles);
+        this.initialTiles = cloneDeep(this.state.tiles);
         this.config = config;
     }
 
@@ -41,35 +41,7 @@ export default class Board extends Entity {
         return parsedConfig;
     }
 
-    update() {
-        let nextTiles = cloneDeep(this.state.initialTiles);
-        let snakes = this.callbacks.getEntityList().snakes;
-        let pills = this.callbacks.getEntityList().pills;
-
-        //Adding snakes to board
-        for (let snake of snakes) {
-            let snakeBody = snake.body;
-            for (let node of snakeBody) {
-                if (!node.nullPosition) {
-                    nextTiles[node.coordinates.x][node.coordinates.y].status = 'SNAKE';
-                }
-            }
-        }
-
-        //Adding pills to board
-        for (let pill of pills) {
-            let pillPosition = pill.position;
-            if (!pill.position.nullPosition) {
-                nextTiles[pillPosition.coordinates.x][pillPosition.coordinates.y].status = 'PILL';
-            }
-        }
-
-
-        let nextState = Object.assign({}, {
-            tiles: nextTiles
-        });
-        this.setState(nextState);
-    }
+    update() {}
 
     reset() {
         this.setState({
@@ -78,7 +50,7 @@ export default class Board extends Entity {
     }
 
     setState(options) {
-        let nextState = cloneDeep(this.state);
+        let nextState = this.state;
         Object.assign(nextState, options);
 
         //log.info('BOARD');

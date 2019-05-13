@@ -17,7 +17,8 @@ describe('Integration test of Snake', function () {
     let notifier;
     let pill;
     let mockCallbacks = {
-        getEntityList: function () {}
+        getEntityList: function () {},
+        propagateRuntime: function(){}
     }
     let mockNotifier = {
         calculateStepCollisionType: function () {},
@@ -30,7 +31,9 @@ describe('Integration test of Snake', function () {
         startY: "0",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar"
+        strategy: "AStar",
+        limitX: "3",
+        limitY: "3"
     }
     let pillConfig = {
         pillValue: "1",
@@ -44,7 +47,7 @@ describe('Integration test of Snake', function () {
         pathfinder: function () {
             return [new IntCoordinate(1, 0)]
         },
-        targetSetter: function () {}
+        calculateTarget: function (pills) {}
     }
 
     beforeEach(function setUp() {
@@ -54,14 +57,17 @@ describe('Integration test of Snake', function () {
     });
 
     describe('function calculatePath', function () {
-        it("should call function in state.strategy.pathfinder and return it's result", function () {
+        it("should call function in state.strategy.pathfinder with itself and callbacks.propagateRuntime with ID and calculated runtime of pathfinder and return it's result", function () {
             let pathfinderStub = sinon.stub(snake.state.strategy, 'pathfinder');
+            let propagateRuntimeSpy = sinon.spy(mockCallbacks, 'propagateRuntime')
             let path = [new IntCoordinate(1, 0), new IntCoordinate(1, 1)];
             pathfinderStub.returns(path);
 
             let calculatedPath = snake.calculatePath();
 
             assert.equal(pathfinderStub.called, true);
+            assert.equal(propagateRuntimeSpy.called, true);
+            assert.equal(propagateRuntimeSpy.calledWith(snake.ID), true);
             assert.deepEqual(calculatedPath, path);
             pathfinderStub.restore();
         });
@@ -245,7 +251,7 @@ describe('Integration test of Snake', function () {
             moveSpy.restore();
         });
 
-        it("should call Notifier.calculateStepCollisionType, once, with the head of move's result body, if notifier is not undefined", function () {
+        it("should call Notifier.calculateStepCollisionType, once, with the head of move's result body and Snake's ID, if notifier is not undefined", function () {
             let calculateStepCollisionTypeSpy = sinon.spy(mockNotifier, 'calculateStepCollisionType');
             let moveStub = sinon.stub(snake, 'move');
             let nextBody = [new IntCoordinate(1, 1), new IntCoordinate(1, 2)];
@@ -256,18 +262,22 @@ describe('Integration test of Snake', function () {
             assert.notEqual(snake.notifier, undefined);
             assert.equal(calculateStepCollisionTypeSpy.calledAfter(moveStub), true);
             let nextHead = nextBody[0];
-            assert.equal(calculateStepCollisionTypeSpy.calledOnceWith(nextHead), true);
+            assert.equal(calculateStepCollisionTypeSpy.calledOnceWith(nextHead,snake.ID), true);
 
             moveStub.restore();
             calculateStepCollisionTypeSpy.restore();
 
         });
 
-        it('should call processNotification if the notificationBuffer is not empty', function () {
+        it("should call processNotification if the notificationBuffer is not empty", function () {
             let processNotificationSpy = sinon.spy(snake, 'processNotification');
             let notification = {
                 type: 'TEST',
-                payload: {}
+                payload: {
+                    entity: {
+                        ID: snake.ID
+                    }
+                }
             }
 
             snake.setState({
@@ -275,7 +285,7 @@ describe('Integration test of Snake', function () {
             });
             assert.equal(snake.state.notificationBuffer.length > 0, true);
             snake.update();
-            assert.equal(processNotificationSpy.called, true);
+            assert.equal(processNotificationSpy.calledWith(notification), true);
 
             processNotificationSpy.restore();
         });
@@ -493,13 +503,17 @@ describe('Integration test of Snake', function () {
             let notification = {
                 type: 'PILL_COLLISION',
                 payload: {
-                    entity: pill
+                    pill: pill,
                 }
             }
+            let pillValue = pill.pillValue;
+
             snake.processNotification(notification, nextState);
+
+            assert.equal(eatSpy.called, true);
+            assert.equal(eatSpy.calledWith(pillValue), true);
             let eatResult = eatSpy.returnValues[0];
             body.push(...eatResult);
-            assert.equal(eatSpy.calledWithExactly(notification.payload.entity.pillValue), true);
             assert.deepEqual(nextState.body, body);
         });
         it("Notification: WALL_COLLISION. Should call die", function () {
@@ -507,7 +521,6 @@ describe('Integration test of Snake', function () {
             let notification = {
                 type: 'WALL_COLLISION',
                 payload: {
-                    entity: pill
                 }
             }
             snake.processNotification(notification);
@@ -518,80 +531,150 @@ describe('Integration test of Snake', function () {
             let notification = {
                 type: 'BODY_COLLISION',
                 payload: {
-                    entity: pill
                 }
             }
             snake.processNotification(notification);
             assert.equal(dieSpy.called, true);
         });
-        it("Notification: TARGET_REACHED. Should call state.strategy.targetSetter with itself if state.strategy and state.strategy.targetSetter are not undefined", function () {
-            let targetSetterSpy = sinon.spy(snake.state.strategy, 'targetSetter');
+        it("Notification: TARGET_REACHED. Should call state.strategy.calculateTarget with itself and set state.target to the result, if state.strategy and state.strategy.calculateTarget are not undefined", function () {
+            let calculateTargetSpy = sinon.spy(snake.state.strategy, 'calculateTarget');
+            let nextState = {
+                target: undefined
+            }
             let notification = {
                 type: 'TARGET_REACHED',
                 payload: {
-                    entity: pill
                 }
             }
-            snake.processNotification(notification);
             assert.notEqual(snake.state.strategy, undefined);
-            assert.notEqual(snake.state.strategy.targetSetter, undefined);
-            assert.equal(targetSetterSpy.called, true);
-            assert.equal(targetSetterSpy.calledWith(snake), true);
+            assert.notEqual(snake.state.strategy.calculateTarget, undefined);
+
+            snake.processNotification(notification,nextState);
+
+            assert.equal(calculateTargetSpy.called, true);
+            assert.equal(calculateTargetSpy.calledWith(snake), true);
+            let newTarget = calculateTargetSpy.returnValues[0];
+            assert.deepEqual(nextState.target, newTarget);
         });
     })
     describe('function onNotify', function () {
-        it('Notification: PILL_COLLISION. Should call storeNotification with type="PILL_COLLISION",  which should return true.', function () {
-            let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
-            let notification = {
-                type: 'PILL_COLLISION',
-            }
-            snake.onNotify(pill, notification);
-            let returnValue = storeNotificationSpy.returnValues[0];
-            let callWithType = storeNotificationSpy.args[0][0].type
-            assert.equal(callWithType, 'PILL_COLLISION');
-            assert.equal(returnValue, true);
-        });
-        it('Notification: WALL_COLLISION. Should call storeNotification with type="WALL_COLLISION", which should retrn true', function () {
-            let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
-            let notification = {
-                type: 'WALL_COLLISION'
-            }
-            snake.onNotify(null, notification);
-
-            snake.onNotify(pill, notification);
-            let returnValue = storeNotificationSpy.returnValues[0];
-            let callWithType = storeNotificationSpy.args[0][0].type
-            assert.equal(callWithType, 'WALL_COLLISION');
-            assert.equal(returnValue, true);
-        });
-        it('Notification: BODY_COLLISION. Should call storeNotification with type="BODY_COLLISION", which should return true', function () {
-            let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
-            let notification = {
-                type: 'BODY_COLLISION'
-            }
-            snake.onNotify(snake, notification);
-            let returnValue = storeNotificationSpy.returnValues[0];
-            let callWithType = storeNotificationSpy.args[0][0].type
-            assert.equal(callWithType, 'BODY_COLLISION');
-            assert.equal(returnValue, true);
-        });
-        it('Notification: TARGET_REACHED. Should call storeNotification with type="TARGET_REACHED", which should return true.', function () {
-            let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
-            snake.setState({
-                target: new IntCoordinate(15, 15)
+        describe("PILL_COLLISION case:", function () {
+            it("should call storeNotification with notification ={type:'PILL_COLLISION', and palyoad={pill: event.pill}}  which should return true if entity.ID matches Snake's ID then it should ", function () {
+                let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
+                let notification = {
+                    type: 'PILL_COLLISION',
+                    pill: pill
+                }
+                snake.onNotify(snake, notification);
+                let returnValue = storeNotificationSpy.returnValues[0];
+                let callWithType = storeNotificationSpy.args[0][0].type;
+                let callWithPayload = storeNotificationSpy.args[0][0].payload;
+                assert.equal(callWithType, 'PILL_COLLISION');
+                assert.equal(callWithPayload.pill.ID, pill.ID);
+                assert.equal(returnValue, true);
             });
-            pill.setState({
-                position: new IntCoordinate(16, 16)
-            });
-            let notification = {
-                type: 'TARGET_REACHED'
-            }
-            snake.onNotify(snake.target, notification);
+            it("should not call storeNotification if entity.ID does not match Snake's ID", function () {
+                let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
+                let notification = {
+                    type: 'PILL_COLLISION',
+                    pill: pill
+                }
+                let entity = {
+                    ID: 'TEST'
+                }
 
-            let returnValue = storeNotificationSpy.returnValues[0];
-            let callWithType = storeNotificationSpy.args[0][0].type
-            assert.equal(callWithType, 'TARGET_REACHED');
-            assert.equal(returnValue, true);
+                snake.onNotify(entity, notification);
+
+                assert.notEqual(snake.ID, entity.ID);
+                assert.equal(storeNotificationSpy.called, false);
+            });
+        });
+        describe("WALL_COLLISION case:", function () {
+            it("should call storeNotification with notification = {type:'WALL_COLLISION', payload:{}} which should retrn true if entity.ID matches Snake's ID.", function () {
+                let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
+                let notification = {
+                    type: 'WALL_COLLISION'
+                }
+                snake.onNotify(snake, notification);
+
+                snake.onNotify(pill, notification);
+                let returnValue = storeNotificationSpy.returnValues[0];
+                let callWithType = storeNotificationSpy.args[0][0].type;
+                assert.equal(callWithType, 'WALL_COLLISION');
+                assert.equal(returnValue, true);
+            });
+            it("should not call storeNotification if entity.ID does not match Snake's ID", function () {
+                let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
+                let notification = {
+                    type: 'WALL_COLLISION',
+                    pill: pill
+                }
+                let entity = {
+                    ID: 'TEST'
+                }
+
+                snake.onNotify(entity, notification);
+
+                assert.notEqual(snake.ID, entity.ID);
+                assert.equal(storeNotificationSpy.called, false);
+            });
+        });
+        describe("BODY_COLLISION case:", function () {
+            it("should call storeNotification withnotification = {type:'BODY_COLLISION', payload:{}}, which should return true if entity.ID matches Snake's ID", function () {
+                let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
+                let notification = {
+                    type: 'BODY_COLLISION'
+                }
+                snake.onNotify(snake, notification);
+                let returnValue = storeNotificationSpy.returnValues[0];
+                let callWithType = storeNotificationSpy.args[0][0].type;
+                assert.equal(callWithType, 'BODY_COLLISION');
+                assert.equal(returnValue, true);
+            });
+            it("should not call storeNotification if entity.ID does not match Snake's ID", function () {
+                let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
+                let notification = {
+                    type: 'BODY_COLLISION',
+                    pill: pill
+                }
+                let entity = {
+                    ID: 'TEST'
+                }
+
+                snake.onNotify(entity, notification);
+
+                assert.notEqual(snake.ID, entity.ID);
+                assert.equal(storeNotificationSpy.called, false);
+            });
+        });
+        describe("TARGET_REACHED case:", function () {
+            it("should call storeNotification with notification = {type:'TARGET_REACHED', payload:{}}, which should return true if entity.ID matches Snake's ID.", function () {
+                let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
+                let notification = {
+                    type: 'TARGET_REACHED'
+                }
+                snake.onNotify(snake, notification);
+
+                let returnValue = storeNotificationSpy.returnValues[0];
+                let callWithType = storeNotificationSpy.args[0][0].type;
+                assert.equal(callWithType, 'TARGET_REACHED');
+                assert.equal(returnValue, true);
+            });
+            it("should not call storeNotification if entity.ID does not match Snake's ID", function () {
+                let storeNotificationSpy = sinon.spy(snake, 'storeNotification');
+                let notification = {
+                    type: 'TARGET_REACHED',
+                    pill: pill
+                }
+                let entity = {
+                    ID: 'TEST'
+                }
+
+                snake.onNotify(entity, notification);
+
+                assert.notEqual(snake.ID, entity.ID);
+                assert.equal(storeNotificationSpy.called, false);
+            });
         });
     });
 })

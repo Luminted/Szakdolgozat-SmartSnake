@@ -6,6 +6,7 @@ import Snake from '../../snake.js';
 import Pill from '../../pill.js';
 import Board from '../../board.js';
 import Notifier from '../../notifier';
+import Strategy from '../../AbstractClasses/Strategy';
 
 
 describe('Integration tests of class Model', function () {
@@ -13,17 +14,41 @@ describe('Integration tests of class Model', function () {
         update() {}
         reset() {}
     }
-    let mockStrategiesIndex = {
-        mockStrategy1: {
-            name: "mockStrategy1"
-        },
-        mockStrategy2: {
-            name: "mockStrategy2"
-        },
-        mockStrategy3: {
-            name: "mockStrategy3"
 
-        },
+    class mockStrategyClass1 extends Strategy {
+        constructor(callbacks) {
+            super();
+            this.callbacks = callbacks;
+        }
+
+        pathfinder() {}
+        calculateTarget() {}
+    }
+
+    class mockStrategyClass2 extends Strategy {
+        constructor(callbacks) {
+            super();
+            this.callbacks = callbacks;
+        }
+
+        pathfinder() {}
+        calculateTarget() {}
+    }
+
+    class mockStrategyClass3 extends Strategy {
+        constructor(callbacks) {
+            super();
+            this.callbacks = callbacks;
+        }
+
+        pathfinder() {}
+        calculateTarget() {}
+    }
+
+    let mockStrategiesIndex = {
+        mockStrategy1: mockStrategyClass1,
+        mockStrategy2: mockStrategyClass2,
+        mockStrategy3: mockStrategyClass3
     }
     let model;
     let boardConfig = {
@@ -75,36 +100,35 @@ describe('Integration tests of class Model', function () {
         snakeConfigs: [snakeConfig1, snakeConfig2, snakeConfig3],
         pillConfigs: [pillConfig1, pillConfig2]
     }
-    let mockCallbacks = {
-        test: function(){}
-    }
+
     beforeEach(function setUp() {
-        model = new Model(mockCallbacks,config, mockStrategiesIndex);
+        model = new Model(config, mockStrategiesIndex);
     })
 
-    describe('constructor', function(){
-        it('should have the following inner state after instantiating with a full config, callbacks and strategies index -> notifier: Notifier, callbacks: callbacks, strategies: strategies, passedDownCallbacks:{function getEntityList, function getEntityByID, function propagateError}, Entities :{snakes: [Snake], pills: [Pill], board: Board}, simulationSpeed: Integer. Model.notifier instantiated with passedDownCallbacks', function(){
-            let newModel = new Model(mockCallbacks, config, mockStrategiesIndex);
+    describe('constructor', function () {
+        it('should have the following inner state after instantiating with a full config and strategies index -> notifier: Notifier, strategies: strategies, runtimes: {}, passedDownCallbacks:{function getEntityList, function getEntityByID, function propagateError}, Entities :{snakes: [Snake], pills: [Pill], board: Board}, simulationSpeed: Integer. Model.notifier instantiated with passedDownCallbacks', function () {
+            let newModel = new Model(config, mockStrategiesIndex);
             let parsedConfig = newModel.parseConfig(config);
 
-            assert.deepEqual(newModel.callbacks, mockCallbacks);
             assert.equal(newModel.notifier instanceof Notifier, true);
             assert.deepEqual(newModel.strategies, mockStrategiesIndex);
+            assert.deepEqual(newModel.runtimes, {});
             assert.equal(typeof newModel.passedDownCallbacks.getEntityList, 'function');
             assert.equal(typeof newModel.passedDownCallbacks.getEntityByID, 'function');
             assert.equal(typeof newModel.passedDownCallbacks.propagateError, 'function');
+            assert.equal(typeof newModel.passedDownCallbacks.propagateRuntime, 'function');
             assert.equal(newModel.simulationSpeed, parsedConfig.simulationSpeed);
-            for(let snake of newModel.Entities.snakes){
+            for (let snake of newModel.Entities.snakes) {
                 assert.equal(snake instanceof Snake, true);
             }
-            for(let pill of newModel.Entities.pills){
+            for (let pill of newModel.Entities.pills) {
                 assert.equal(pill instanceof Pill, true);
             }
             assert.equal(newModel.Entities.board instanceof Board, true);
         });
-        it('should not be dependent of callbacks or strategy index', function(){
-            assert.doesNotThrow(() => new Model(undefined,config,undefined), Error);
-        });
+        // it('should not be dependent on callbacks or strategy index', function () {
+        //     assert.doesNotThrow(() => new Model(undefined, config, undefined), Error);
+        // });
     })
     describe('function update', function () {
         it('should call update on all entities, once, if isGameOver returns false', function () {
@@ -114,6 +138,7 @@ describe('Integration tests of class Model', function () {
             let entityUpdateSpies = [];
             let isGameOverSpy = sinon.spy(model, 'isGameOver');
             entityUpdateSpies.push(sinon.spy(board, 'update'));
+
             for (let i = 0; i < snakes.length; i++) {
                 entityUpdateSpies.push(sinon.spy(snakes[i], 'update'));
             }
@@ -215,6 +240,15 @@ describe('Integration tests of class Model', function () {
         })
     })
     describe('Callbacks', function () {
+        describe('function propagateRuntime', function(){
+            it('should add passed runtime to runtimes object with given ID as key', function(){
+                model.runtimes = {}
+                let runTime = 3;
+                let ID = 'id-TEST'
+                model.passedDownCallbacks.propagateRuntime(ID,runTime);
+                assert.equal(model.runtimes[ID], runTime);
+            })
+        })
         describe('function getEntityByID', function () {
             it('should return the Entity with the given ID', function () {
                 let returnedEntity;
@@ -237,62 +271,67 @@ describe('Integration tests of class Model', function () {
                 assert.equal(returnedEntity.ID, boardID);
             });
         });
-        describe('function getEntityList', function(){
-            it('should return object with fields snakes: [Snake], pills: [Pill], board: Board', function(){
+        describe('function getEntityList', function () {
+            it('should return object with fields snakes: [Snake], pills: [Pill], board: Board', function () {
                 let entities = model.getEntityList();
                 let snakes = entities.snakes;
                 let pills = entities.pills;
                 let board = entities.board;
 
                 assert.equal(Array.isArray(snakes), true);
-                for(let snake of snakes){
-                    assert.equal(snake instanceof Snake,true);
+                for (let snake of snakes) {
+                    assert.equal(snake instanceof Snake, true);
                 }
 
                 assert.equal(Array.isArray(pills), true);
-                for(let pill of pills){
-                    assert.equal(pill instanceof Pill,true);
+                for (let pill of pills) {
+                    assert.equal(pill instanceof Pill, true);
                 }
-                assert.equal(board instanceof Board,true);
+                assert.equal(board instanceof Board, true);
             });
         });
-        describe('function propagateError', function(){
-            it('should return error given as argument it is actually an error', function(){
+        describe('function propagateError', function () {
+            it('should return error given as argument it is actually an error', function () {
                 let error = new Error('TEST');
                 let propagatedError = model.propagateError(error);
                 assert.deepEqual(propagatedError, error);
             });
-            it('should return undefined if argument is not instance of Error', function(){
+            it('should return undefined if argument is not instance of Error', function () {
                 let error = {
                     message: 'TEST'
                 }
                 let propagatedError = model.propagateError(error);
-                assert.equal(propagatedError,undefined);
+                assert.equal(propagatedError, undefined);
             })
         })
     })
     describe('function snakeFactory', function () {
-        it('should a snake config and a notifier, and return a Snake with the given strategy in config', function () {
+        it('should get a snake config and a notifier, and return a Snake with the given strategy in config. Strategies should have passedDownCallbacks.', function () {
             let notifier = new Notifier();
-            let snake1 = model.snakeFactory(snakeConfig1,notifier);
-            let snake2 = model.snakeFactory(snakeConfig2,notifier);
-            let snake3 = model.snakeFactory(snakeConfig3,notifier);
+            let snake1 = model.snakeFactory(snakeConfig1, notifier);
+            let snake2 = model.snakeFactory(snakeConfig2, notifier);
+            let snake3 = model.snakeFactory(snakeConfig3, notifier);
 
-            assert.equal(snake1.state.strategy.name, snakeConfig1.strategy);
+            assert.equal(snake1.state.strategy instanceof model.strategies[snakeConfig1.strategy], true);
+            assert.deepEqual(snake1.state.strategy.callbacks, model.passedDownCallbacks);
             assert.equal(snake1.state.notifier, snakeConfig1.notifier);
-            assert.equal(snake2.state.strategy.name, snakeConfig2.strategy);
+            assert.equal(snake2.state.strategy instanceof model.strategies[snakeConfig2.strategy], true);
+            assert.deepEqual(snake1.state.strategy.callbacks, model.passedDownCallbacks);
             assert.equal(snake2.state.notifier, snakeConfig2.notifier);
-            assert.equal(snake3.state.strategy.name, snakeConfig3.strategy);
+            assert.equal(snake3.state.strategy instanceof model.strategies[snakeConfig3.strategy], true);
+            assert.deepEqual(snake1.state.strategy.callbacks, model.passedDownCallbacks);
             assert.equal(snake3.state.notifier, snakeConfig3.notifier);
         });
     });
     describe('function enrichConfig', function () {
-        it('should enrich given config with limitX and limitY fields in pillConfigs elements with boardConfig.width and boardConfig.width respectively, if they are defined', function () {
+        it('should enrich given config with limitX and limitY fields in pillConfigs and snakeConfigs elements with boardConfig.width and boardConfig.width respectively, if they are defined', function () {
             let config = {
                 boardConfig,
-                pillConfigs: [pillConfig1, pillConfig2]
+                pillConfigs: [pillConfig1, pillConfig2],
+                snakeConfigs: [snakeConfig1, snakeConfig2]
             };
             let enrichedConfig = model.enrichConfig(config);
+            let snakeConfigs = enrichedConfig.snakeConfigs;
             let pillconfigs = enrichedConfig.pillConfigs;
             assert.notEqual(boardConfig, undefined);
             assert.notEqual(boardConfig.width, undefined);
@@ -301,28 +340,76 @@ describe('Integration tests of class Model', function () {
                 assert.equal(pillConfig.limitX, boardConfig.width);
                 assert.equal(pillConfig.limitY, boardConfig.height);
             }
+            for (let snakeConfig of snakeConfigs) {
+                assert.equal(snakeConfig.limitX, boardConfig.width);
+                assert.equal(snakeConfig.limitY, boardConfig.height);
+            }
         });
-        it('should set limitX and limitY fields in pillConfig elements to 0 by default', function () {
+        it('should set limitX and limitY fields in pillConfig elements to 0 by default if boardConfig, boardCongif.width or boardConfig.height is missing', function () {
             let config = {
                 pillConfigs: [pillConfig1]
             }
-            let enrichedConfig = model.enrichConfig(config);
-            let enrichedLimitX = enrichedConfig.pillConfigs[0].limitX;
-            let enrichedLimitY = enrichedConfig.pillConfigs[0].limitY;
+            let enrichedConfig;
+            let enrichedLimitX;
+            let enrichedLimitY;
+
+            // boardConfig missing case
+            enrichedConfig = model.enrichConfig(config);
+            enrichedLimitX = enrichedConfig.pillConfigs[0].limitX;
+            enrichedLimitY = enrichedConfig.pillConfigs[0].limitY;
+            assert.equal(config.boardConfig, undefined);
             assert.equal(enrichedLimitX, 0);
             assert.equal(enrichedLimitY, 0);
+
+
+
+            // boardConfig.height missing case
+            config = {
+                pillConfigs: [pillConfig1],
+                boardConfig: {
+                    width: 2
+                }
+            }
+
+            enrichedConfig = model.enrichConfig(config);
+            enrichedLimitX = enrichedConfig.pillConfigs[0].limitX;
+            enrichedLimitY = enrichedConfig.pillConfigs[0].limitY;
+            assert.equal(config.boardConfig.height, undefined);
+            assert.equal(enrichedLimitX, config.boardConfig.width);
+            assert.equal(enrichedLimitY, 0);
+
+            // boardConfig.width missing case
+            config = {
+                pillConfigs: [pillConfig1],
+                boardConfig: {
+                    height: 2
+                }
+            }
+
+            enrichedConfig = model.enrichConfig(config);
+            enrichedLimitX = enrichedConfig.pillConfigs[0].limitX;
+            enrichedLimitY = enrichedConfig.pillConfigs[0].limitY;
+            assert.equal(config.boardConfig.width, undefined);
+            assert.equal(enrichedLimitX, 0);
+            assert.equal(enrichedLimitY, config.boardConfig.height);
         });
-        it('should do nothing if config.pillConfigs is not an array or is undefined', function () {
+        it('should not throw Error if config.pillConfigs is not an array or is undefined', function () {
             let config = {
                 boardConfig,
                 pillConfigs: undefined
             };
-            let enrichedConfig = model.enrichConfig(config);
-            assert.deepEqual(enrichedConfig, config);
+            assert.doesNotThrow(() => model.enrichConfig(config), Error);
+        })
+        it('should not throw Error if config.snakeConfigs is not an array or is undefined', function () {
+            let config = {
+                boardConfig,
+                snakeConfigs: undefined
+            };
+            assert.doesNotThrow(() => model.enrichConfig(config), Error);
         })
     })
     describe('function parseConfig', function () {
-        it('should return an object with fields: snakes:[Snake], pills: [Pill], board: Board, simulationSpeed: Integer. Values of returned object should match given config values. Callbacks field of entities should be models callbacks.', function () {
+        it('should return an object with fields: snakes:[Snake], pills: [Pill], board: Board, simulationSpeed: Integer. Values of returned object should match given config values. Callbacks field of entities should be models passedDownCallbacks. Notifier field of entites should be models notifier', function () {
             let config = {
                 main: mainConfig,
                 boardConfig: boardConfig,
@@ -335,9 +422,10 @@ describe('Integration tests of class Model', function () {
             let snakes = result.snakes;
             for (let i = 0; i < snakes.length; i++) {
                 assert.equal(snakes[i] instanceof Snake, true);
-                assert.deepEqual(snakes[i].state.strategy, model.strategies[config.snakeConfigs[i].strategy]);
+                assert.equal(snakes[i].state.strategy instanceof model.strategies[config.snakeConfigs[i].strategy], true);
                 assert.deepEqual(snakes[i].config, config.snakeConfigs[i]);
                 assert.deepEqual(snakes[i].callbacks, passedDownCallbacks);
+                assert.equal(snakes[i].notifier, model.notifier);
             }
             assert.equal(Array.isArray(result.pills), true);
             let pills = result.pills;
@@ -345,6 +433,8 @@ describe('Integration tests of class Model', function () {
                 assert.equal(pills[i] instanceof Pill, true);
                 assert.deepEqual(pills[i].config, config.pillConfigs[i]);
                 assert.deepEqual(pills[i].callbacks, passedDownCallbacks);
+                assert.equal(pills[i].notifier, model.notifier);
+
 
             }
             assert.equal(result.board instanceof Board, true);
@@ -479,7 +569,9 @@ describe('Integration tests of class Model', function () {
             };
             let snakeFactorySpy = sinon.spy(model, 'snakeFactory');
             let parseResult = model.parseConfig(config);
-            assert.equal(snakeFactorySpy.called, true);
+            let snakeFactoryArgs = snakeFactorySpy.args[0];
+            assert.deepEqual(snakeFactoryArgs[0], snakeConfig1);
+            assert.deepEqual(snakeFactoryArgs[1], model.notifier);
             let factorySnake = snakeFactorySpy.returnValues[0];
             assert.deepEqual(parseResult.snakes[0], factorySnake);
         });

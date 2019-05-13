@@ -13,14 +13,9 @@ export default class IntCoordinate {
     }
 
     get coordinates() {
-
-        if (this.nullPosition) {
-            return undefined;
-        } else {
-            return{
-                x: this.x,
-                y: this.y
-            }
+        return {
+            x: this.x,
+            y: this.y
         }
     }
 }

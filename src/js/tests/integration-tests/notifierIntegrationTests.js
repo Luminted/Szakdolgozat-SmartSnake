@@ -1,5 +1,6 @@
 import assert from 'assert';
 import sinon from 'sinon';
+import cloneDeep from 'lodash/cloneDeep';
 import IntCoordinate from '../../intCoordinate';
 import ObserverEntity from '../../AbstractClasses/ObserverEntity';
 import Snake from '../../snake';
@@ -12,6 +13,7 @@ describe('Integration test of Notifier', function () {
     class MockObserverEntityClass extends ObserverEntity {
         constructor() {
             super();
+            this.id = 'MockObserverId';
         }
         onNotify() {}
         update() {}
@@ -29,7 +31,9 @@ describe('Integration test of Notifier', function () {
         startY: "1",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar"
+        strategy: "AStar",
+        limitX: "3",
+        limitY: "3"
     }
     let snakeConfig2 = {
         baseLength: "1",
@@ -37,7 +41,9 @@ describe('Integration test of Notifier', function () {
         startY: "0",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar"
+        strategy: "AStar",
+        limitX: "3",
+        limitY: "3"
     }
     let snakeConfig3 = {
         baseLength: "1",
@@ -45,7 +51,9 @@ describe('Integration test of Notifier', function () {
         startY: "1",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar"
+        strategy: "AStar",
+        limitX: "3",
+        limitY: "3"
     }
     let pillConfig1 = {
         pillValue: "1",
@@ -94,7 +102,7 @@ describe('Integration test of Notifier', function () {
         notifier = new Notifier(mockCallBacks);
         snake1 = new Snake(mockCallBacks, snakeConfig1, {}, notifier);
         snake2 = new Snake(mockCallBacks, snakeConfig2, {}, notifier);
-        snake3 = new Snake(mockCallBacks, snakeConfig3,{}, notifier);
+        snake3 = new Snake(mockCallBacks, snakeConfig3, {}, notifier);
         pill1 = new Pill(mockCallBacks, pillConfig1, notifier);
         pill2 = new Pill(mockCallBacks, pillConfig2, notifier);
         board = new Board(mockCallBacks, boardConfig);
@@ -104,43 +112,53 @@ describe('Integration test of Notifier', function () {
         beforeEach(function subScribeMockObserver() {
             notifier.subscribe(mockObserverEntity);
         })
+
+        it("should call storeLastNode with current Snake's last node and ID", function () {
+            let nextStep = new IntCoordinate(1, 1);
+            let getEntityByIDStub = sinon.stub(mockCallBacks, 'getEntityByID');
+            let storeLastNodeSpy = sinon.spy(notifier, 'storeLastNode');
+            getEntityByIDStub.returns(snake1);
+
+            notifier.calculateStepCollisionType(nextStep, snake1.ID);
+
+            assert.equal(storeLastNodeSpy.called, true);
+            assert.equal(storeLastNodeSpy.calledWith(snake1.ID, snake1.endOfBody), true);
+
+            getEntityByIDStub.restore();
+            storeLastNodeSpy.restore();
+
+        });
+        it("should clear lastNodeBuffer if it it's size is equal to number of Snakes", function () {
+            let nextStep = new IntCoordinate(1, 1);
+            let storeLastNodeSpy = new sinon.spy(notifier, 'storeLastNode');
+            let snakes = mockCallBacks.getEntityList().snakes;
+            let getEntityByIDStub = sinon.stub(mockCallBacks, 'getEntityByID');
+            let callerSnake = snake3;
+
+            getEntityByIDStub.returns(callerSnake);
+            notifier.lastNodeBuffer = {
+                'TEST1': 'TEST',
+                'TEST2': 'TEST'
+            }
+
+            assert.equal(Object.keys(notifier.lastNodeBuffer).length, snakes.length - 1);
+            notifier.calculateStepCollisionType(nextStep, callerSnake);
+
+            assert.equal(storeLastNodeSpy.returnValues[0], true);
+            assert.deepEqual(notifier.lastNodeBuffer, {});
+
+            storeLastNodeSpy.restore();
+            getEntityByIDStub.restore();
+        })
+
         describe('WALL_COLLISION case:', function () {
 
 
-            it("should send a notification, once, with type: 'WALL_COLLISION' and entity: caller Snake, if given next step is over board dimensions", function () {
-                let dimensions = board.dimensions;
+            it("should send a notification, once, with type: 'WALL_COLLISION' and entity: caller Snake, if given next step is null position", function () {
                 let mockObserverOnNotifySpy = sinon.spy(mockObserverEntity, 'onNotify');
                 let nextStep;
 
-                // x coord out of upper bound
-                nextStep = new IntCoordinate(dimensions.dimX, 0);
-                notifier.calculateStepCollisionType(nextStep, callerID);
-                assert.equal(mockObserverOnNotifySpy.called, true);
-                assert.equal(mockObserverOnNotifySpy.args[0][1].type, 'WALL_COLLISION');
-                assert.equal(mockObserverOnNotifySpy.args[0][0].ID, callerID);
-
-                mockObserverOnNotifySpy.resetHistory();
-
-                // x coord out of lower bound
-                nextStep = new IntCoordinate(-1, 0);
-                notifier.calculateStepCollisionType(nextStep, callerID);
-                assert.equal(mockObserverOnNotifySpy.called, true);
-                assert.equal(mockObserverOnNotifySpy.args[0][1].type, 'WALL_COLLISION');
-                assert.equal(mockObserverOnNotifySpy.args[0][0].ID, callerID);
-
-                mockObserverOnNotifySpy.resetHistory();
-
-                // y coord out of upper bound
-                nextStep = new IntCoordinate(0, dimensions.dimY);
-                notifier.calculateStepCollisionType(nextStep, callerID);
-                assert.equal(mockObserverOnNotifySpy.called, true);
-                assert.equal(mockObserverOnNotifySpy.args[0][1].type, 'WALL_COLLISION');
-                assert.equal(mockObserverOnNotifySpy.args[0][0].ID, callerID);
-
-                mockObserverOnNotifySpy.resetHistory();
-
-                // y coord out of lower bound
-                nextStep = new IntCoordinate(0, -1);
+                nextStep = new IntCoordinate(0, 0, true);
                 notifier.calculateStepCollisionType(nextStep, callerID);
                 assert.equal(mockObserverOnNotifySpy.called, true);
                 assert.equal(mockObserverOnNotifySpy.args[0][1].type, 'WALL_COLLISION');
@@ -150,25 +168,36 @@ describe('Integration test of Notifier', function () {
             });
         });
         describe('PILL_COLLISION case:', function () {
-            it("should send a notification, once, with type: 'PILL_COLLISION' and entity: Pill that was collided with, if next step coordinates are equal to one Pill's coordinates", function () {
+            it("should send a notification, once, with event = {type: 'PILL_COLLISION', pill: currently processed pill}, and entity = caller Snake that was collided with, if next step coordinates are equal to one Pill's coordinates", function () {
                 let nextStep;
                 let mockObserverOnNotifySpy = sinon.spy(mockObserverEntity, 'onNotify');
+                let originalPill1Position = cloneDeep(pill1.position);
+                let originalPill2Position = cloneDeep(pill2.position);
 
                 //collides with pill1
-                nextStep = pill1.position;
+                nextStep = new IntCoordinate(pill1.position.coordinates.x, pill1.position.coordinates.y);
                 notifier.calculateStepCollisionType(nextStep, callerID);
                 assert.equal(mockObserverOnNotifySpy.called, true);
                 assert.equal(mockObserverOnNotifySpy.args[0][1].type, 'PILL_COLLISION');
-                assert.equal(mockObserverOnNotifySpy.args[0][0].ID, pill1.ID);
+                assert.equal(mockObserverOnNotifySpy.args[0][1].pill.ID, pill1.ID);
+                assert.equal(mockObserverOnNotifySpy.args[0][0].ID, callerID);
 
                 mockObserverOnNotifySpy.resetHistory();
+                pill1.setState({
+                    position: originalPill1Position
+                })
+                pill2.setState({
+                    position: originalPill2Position
+                })
+
 
                 //collides with pill2
-                nextStep = pill2.position;
+                nextStep = new IntCoordinate(pill2.position.coordinates.x, pill2.position.coordinates.y);
                 notifier.calculateStepCollisionType(nextStep, callerID);
                 assert.equal(mockObserverOnNotifySpy.called, true);
                 assert.equal(mockObserverOnNotifySpy.args[0][1].type, 'PILL_COLLISION');
-                assert.equal(mockObserverOnNotifySpy.args[0][0].ID, pill2.ID);
+                assert.equal(mockObserverOnNotifySpy.args[0][1].pill.ID, pill2.ID);
+                assert.equal(mockObserverOnNotifySpy.args[0][0].ID, callerID);
 
 
                 mockObserverOnNotifySpy.restore();
@@ -176,7 +205,7 @@ describe('Integration test of Notifier', function () {
             });
         });
         describe('TARGET_REACHED case:', function () {
-            it("should send a notification, once, with type:'TARGET_REACHED' and entity: called Snake, if next step coordinates are equal to caller Snake's target coordinates", function () {
+            it("should send a notification, once, with event = {type:'TARGET_REACHED'} and entity = caller Snake, if next step coordinates are equal to caller Snake's target coordinates", function () {
                 let getEntityByIDStub = sinon.stub(mockCallBacks, 'getEntityByID');
                 let targetCoordinate = new IntCoordinate(2, 2);
                 let nextStep = targetCoordinate;
@@ -204,7 +233,7 @@ describe('Integration test of Notifier', function () {
             });
         });
         describe('BODY_COLLISION case:', function () {
-            it("should send a notification, once, with type: BODY_COLLISION and entity: caller Snake, if next step coordinates are equal to a Snake's coordinates", function () {
+            it("should send a notification, once, with event = {type: BODY_COLLISION} and entity = caller Snake, if next step coordinates are equal to a Snake's coordinates", function () {
                 let nextStep;
                 let mockObserverOnNotifySpy = sinon.spy(mockObserverEntity, 'onNotify');
                 let lastNodes = [new IntCoordinate(0, 1), new IntCoordinate(1, 0)];
@@ -262,51 +291,7 @@ describe('Integration test of Notifier', function () {
                 assert.equal(mockObserverOnNotifySpy.called, false);
 
                 mockObserverOnNotifySpy.restore();
-
             });
-            it('should send a BODY_COLLISION, once, to all Snakes that are trying to step on the same coordinate in the same tick with themselves as entities. Notifications should be sent in the last call to calculateStepCollisionType in the tick.', function () {
-                let callerIDs = ["1", "2", "3"];
-                let getEntityByIDStub = sinon.stub(mockCallBacks, 'getEntityByID');
-                let nextStep = new IntCoordinate(2, 2);
-                let mockObserverOnNotifySpy = sinon.spy(mockObserverEntity, 'onNotify');
-
-                getEntityByIDStub.returns({
-                    ID: callerIDs[0]
-                });
-                notifier.calculateStepCollisionType(nextStep, callerIDs[0]);
-                assert.equal(mockObserverOnNotifySpy.called, false);
-                getEntityByIDStub.reset();
-
-                getEntityByIDStub.returns({
-                    ID: callerIDs[1]
-                })
-                notifier.calculateStepCollisionType(nextStep, callerIDs[1]);
-                assert.equal(mockObserverOnNotifySpy.called, false);
-                getEntityByIDStub.returns({
-                    ID: callerIDs[2]
-                });
-                getEntityByIDStub.restore();
-
-                notifier.calculateStepCollisionType(nextStep, callerIDs[2]);
-                let onNotifyCalls = mockObserverOnNotifySpy.getCalls();
-                assert.equal(onNotifyCalls.length, callerIDs.length);
-                for (let call of onNotifyCalls) {
-                    console.log(call.args);
-                    assert.equal(call.args[0].ID, callerID);
-                    assert.equal(call.args[1].type, 'BODY_COLLISION')
-                }
-
-                // getEntityByIDStub.restore();
-                mockObserverOnNotifySpy.restore();
-
-            });
-            // it('should empty the nextStepBuffer is it has as many elements as there are number of snakes', function () {
-            //     notifier.nextStepBuffer = {
-            //         1: 'TEST',
-            //         2: 'TEST',
-            //         3: 'TEST',
-            //     }
-            // })
         })
     });
 });

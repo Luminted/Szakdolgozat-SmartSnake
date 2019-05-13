@@ -1,19 +1,14 @@
-import Model from '../../model.js';
 import LeftTurnCommand from '../../Commands/LeftTurnCommand';
 import RightTurnCommand from '../../Commands/RightTurnCommand';
 import DownTurnCommand from '../../Commands/DownTurnCommand';
 import UpTurnCommand from '../../Commands/UpTurnCommand';
 import IntCoordinate from '../../intCoordinate.js';
-import {
-    idGenerator
-} from '../../customUtils';
 
 
 import assert from 'assert';
 import sinon from 'sinon';
 import cloneDeep from 'lodash/cloneDeep'
 import Snake from '../../snake.js';
-import Pill from '../../pill.js';
 import Notifier from '../../notifier.js';
 
 
@@ -25,7 +20,9 @@ export default {
             startY: "0",
             startDirection: 'RIGHT',
             startVelocity: "1",
-            strategy: "AStar"
+            strategy: "AStar",
+            limitX: "2",
+            limitY: "2"
         }
         let mockStrategy = {
             test: function () {
@@ -43,19 +40,21 @@ export default {
             snake = new Snake({}, snakeConfig);
         });
         describe('contructor', function () {
-            it('should have the following inner state if instantiated with a full config, callbacks, strategy, Notifier, callbacks: callbacks, notifier: Notifier, config: config,state.ID: customUtils/idGenerator(),state.strategy:strategy, state.command: undefined, state.notificationBuffer: [], state.status: "ALIVE", state.path: undefined, state.velocity: {x:0, y:0},  and the result of parsedConfig should be added too. Snake should subscribe to the given notifier.', function () {
+            it('should have the following inner state if instantiated with a full config, callbacks, strategy, Notifier, callbacks: callbacks, notifier: Notifier, timer: Date, config: config,state.ID: customUtils/idGenerator(),state.strategy:strategy, state.command: undefined, state.notificationBuffer: [], state.status: "ALIVE", state.path: [], state.velocity: {x:0, y:0},  and the result of parsedConfig should be added too. Snake should subscribe to the given notifier.', function () {
                 let subscribeSpy = sinon.spy(notifier, 'subscribe');
                 let newSnake = new Snake(mockCallbacks, snakeConfig, mockStrategy, notifier);
                 let parsedConfig = newSnake.parseConfig(snakeConfig);
+
                 assert.deepEqual(newSnake.callbacks, mockCallbacks);
                 assert.deepEqual(newSnake.config, snakeConfig);
                 assert.equal(newSnake.notifier, notifier);
+                assert.equal(newSnake.timer instanceof Date, true);
                 assert.equal(newSnake.state.ID.split('-')[0], 'id');
                 assert.equal(newSnake.state.command, undefined);
                 assert.deepEqual(newSnake.state.notificationBuffer, []);
                 assert.equal(newSnake.state.status, 'ALIVE');
                 assert.deepEqual(newSnake.state.strategy, mockStrategy);
-                assert.equal(newSnake.state.path, undefined);
+                assert.deepEqual(newSnake.state.path, []);
                 for (let key of Object.keys(parsedConfig)) {
                     assert.deepEqual(newSnake.state[key], parsedConfig[key]);
                 }
@@ -68,13 +67,15 @@ export default {
             })
         })
         describe('function parseConfig', function () {
-            it('should return an object with fields body: [IntCoordinates->nullPosition = false], direction: (LEFT | RIGHT | UP | DOWN), baseVelocity: integer', function () {
+            it('should return an object with fields body: [IntCoordinates->nullPosition = false], direction: (LEFT | RIGHT | UP | DOWN), baseVelocity: integer, limits: {x: integer, y: integer}', function () {
                 let snakeConfig = {
                     startVelocity: "1",
                     baseLength: "2",
                     startX: "0",
                     startY: "0",
                     startDirection: "RIGHT",
+                    limitX: "2",
+                    limitY: "2"
                 }
                 let directions = new Set(['LEFT', 'RIGHT', 'UP', 'DOWN']);
                 let parsedConfig = snake.parseConfig(snakeConfig);
@@ -84,16 +85,29 @@ export default {
                     assert.equal(node instanceof IntCoordinate, true);
                     assert.equal(node.nullPosition, false);
                 }
+                assert.notEqual(parsedConfig.limits, undefined);
+                assert.equal(Number.isInteger(parsedConfig.limits.x), true);
+                assert.equal(Number.isInteger(parsedConfig.limits.y), true);
                 assert.equal(Number.isInteger(parsedConfig.baseVelocity), true);
                 assert.equal(directions.has(parsedConfig.direction), true);
             });
-            it('should raise an error if the config is missing vital information', function () {
+            it('should raise a ConfigError if config is missing', function(){
+                assert.throws(() => snake.parseConfig(), Error);
+                try{
+                    assert.throws(() => snake.parseConfig(), Error);
+                }catch(e){
+                    assert.equal(e.name, 'ConfigError');
+                }
+            })
+            it('should raise an ConfigError if the config is missing vital information', function () {
                 let config1 = {
                     // startVelocity: "1",
                     baseLength: "3",
                     startX: "0",
                     startY: "0",
                     startDirection: "RIGHT",
+                    limitX: "3",
+                    limitY: "3"
 
                 }
                 let config2 = {
@@ -102,6 +116,8 @@ export default {
                     startX: "0",
                     startY: "0",
                     startDirection: "RIGHT",
+                    limitX: "3",
+                    limitY: "3"
 
                 }
                 let config3 = {
@@ -110,6 +126,8 @@ export default {
                     // startX: "0",
                     startY: "0",
                     startDirection: "RIGHT",
+                    limitX: "3",
+                    limitY: "3"
 
                 }
                 let config4 = {
@@ -118,6 +136,8 @@ export default {
                     startX: "0",
                     // startY: "0",
                     startDirection: "RIGHT",
+                    limitX: "3",
+                    limitY: "3"
 
                 }
                 let config5 = {
@@ -126,8 +146,30 @@ export default {
                     startX: "0",
                     startY: "0",
                     // startDirection: "RIGHT",
-
+                    limitX: "3",
+                    limitY: "3"
                 }
+
+                let config6 = {
+                    startVelocity: "1",
+                    baseLength: "3",
+                    startX: "0",
+                    startY: "0",
+                    startDirection: "RIGHT",
+                    // limitX: "3",
+                    limitY: "3"
+                }
+
+                let config7 = {
+                    startVelocity: "1",
+                    baseLength: "3",
+                    startX: "0",
+                    startY: "0",
+                    startDirection: "RIGHT",
+                    limitX: "3",
+                    // limitY: "3"
+                }
+
 
                 //TODO: check for custom error
                 assert.throws(function () {
@@ -145,6 +187,48 @@ export default {
                 assert.throws(function () {
                     snake.parseConfig(config5)
                 }, Error);
+                assert.throws(function () {
+                    snake.parseConfig(config6)
+                }, Error);
+                assert.throws(function () {
+                    snake.parseConfig(config7)
+                }, Error);
+
+                try {
+                    snake.parseConfig(config1);
+                } catch (e) {
+                    assert.equal(e.name, 'ConfigError');
+                }
+                try {
+                    snake.parseConfig(config2);
+                } catch (e) {
+                    assert.equal(e.name, 'ConfigError');
+                }
+                try {
+                    snake.parseConfig(config3);
+                } catch (e) {
+                    assert.equal(e.name, 'ConfigError');
+                }
+                try {
+                    snake.parseConfig(config4);
+                } catch (e) {
+                    assert.equal(e.name, 'ConfigError');
+                }
+                try {
+                    snake.parseConfig(config5);
+                } catch (e) {
+                    assert.equal(e.name, 'ConfigError');
+                }
+                try {
+                    snake.parseConfig(config6);
+                } catch (e) {
+                    assert.equal(e.name, 'ConfigError');
+                }
+                try {
+                    snake.parseConfig(config7);
+                } catch (e) {
+                    assert.equal(e.name, 'ConfigError');
+                }
 
             });
             it('should not raise an error with a proper config', function () {
@@ -154,6 +238,8 @@ export default {
                     startX: "0",
                     startY: "0",
                     startDirection: "RIGHT",
+                    limitX: "2",
+                    limitY: "2"
                 }
                 assert.doesNotThrow(function () {
                     snake.parseConfig(config)
@@ -293,30 +379,86 @@ export default {
             })
         });
         describe("function calculateNextHead", function () {
-            it('should return new IntCoordinate with position x=16, y=15', function () {
-                let head = new IntCoordinate(15, 15);
+            it("should return new IntCoordinate by adding given velocityX and velocityY to current head's coordinate x and y", function () {
+                let head;
+                let velocityX;
+                let velocityY;
+                let nextHead;
+                
+                head = new IntCoordinate(0, 0);
 
-                let velocityX = 1;
-                let velocityY = 0;
+                velocityX = 1;
+                velocityY = 0;
                 snake.setState({
                     body: [head]
                 });
-                let nextHead = snake.calculateNextHead(velocityX, velocityY)
+                nextHead = snake.calculateNextHead(velocityX, velocityY);
                 assert.equal(nextHead.coordinates.x, head.coordinates.x + velocityX);
                 assert.equal(nextHead.coordinates.y, head.coordinates.y + velocityY);
-            });
-            it('should return head with position x=15, y=16', function () {
-                let head = new IntCoordinate(15, 15);
+            
+                ///////////////////
 
-                let velocityX = 0;
-                let velocityY = 1;
+                head = new IntCoordinate(0, 0);
+
+                velocityX = 0;
+                velocityY = 1;
                 snake.setState({
                     body: [head]
                 });
-                let nextHead = snake.calculateNextHead(velocityX, velocityY)
+                nextHead = snake.calculateNextHead(velocityX, velocityY)
                 assert.equal(nextHead.coordinates.x, head.coordinates.x + velocityX);
                 assert.equal(nextHead.coordinates.y, head.coordinates.y + velocityY);
             });
+
+            it('should return an IntCoordinate with nullPosition = true if coordinates of next head are negative or greater than limits', function(){
+                let nextHead;
+                let velocityX;
+                let velocityY;
+                let snakeHead;
+                let limits = snake.state.limits;
+                
+                // x out of lower bound
+                snakeHead = new IntCoordinate(0,0);
+                velocityX = -1;
+                velocityY = 0;
+                snake.setState({
+                    body: [snakeHead]
+                });
+                nextHead = snake.calculateNextHead(velocityX, velocityY);
+                assert.equal(nextHead.nullPosition, true);
+
+                // y out of lower bound
+                snakeHead = new IntCoordinate(0,0);
+                velocityX = 0;
+                velocityY = -1;
+                snake.setState({
+                    body: [snakeHead]
+                });
+                nextHead = snake.calculateNextHead(velocityX, velocityY);
+                assert.equal(nextHead.nullPosition, true);
+
+                // x out of upper bound
+                snakeHead = new IntCoordinate(limits.x - 1,0);
+                velocityX = 1;
+                velocityY = 0;
+                snake.setState({
+                    body: [snakeHead]
+                });
+                nextHead = snake.calculateNextHead(velocityX, velocityY);
+                assert.equal(nextHead.coordinates.x >= limits.x, true);
+                assert.equal(nextHead.nullPosition, true);
+
+                // x out of lower bound
+                snakeHead = new IntCoordinate(0,limits.y - 1);
+                velocityX = 0;
+                velocityY = 1;
+                snake.setState({
+                    body: [snakeHead]
+                });
+                nextHead = snake.calculateNextHead(velocityX, velocityY);
+                assert.equal(nextHead.coordinates.y >= limits.y, true);
+                assert.equal(nextHead.nullPosition, true);
+            })
             it('should return an new IntCoordinate', function () {
                 let head = new IntCoordinate(15, 15);
                 let velocityX = 0;
@@ -332,7 +474,7 @@ export default {
         describe("function reset", function () {
             it("should reset game state of snake to values defined in it's config and constructor", function () {
                 let snakeConfig = snake.config;
-                let initialState = snake.state;
+                let initialState = cloneDeep(snake.state);
                 let parsedConfig = snake.parseConfig(snakeConfig);
 
                 //scrambling state

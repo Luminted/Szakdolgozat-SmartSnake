@@ -7,7 +7,6 @@ import IntCoordinate from './intCoordinate.js';
  */
 export default class CanvasWrapper {
     constructor(width, height, canvasDOMElement) {
-        console.log(canvasDOMElement);
         if(canvasDOMElement == undefined || typeof canvasDOMElement.getContext != 'function'){
             throw new Error('Cannot get render context of wrapped element.');
         }

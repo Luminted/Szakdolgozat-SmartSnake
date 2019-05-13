@@ -23,13 +23,13 @@ describe('Unit testing pill.js', function () {
     });
 
     describe('constructor', function(){
-        it('should have the following inner state after instantiated by a full config, callbacks and Notifier -> config: config, callbacks: callbacks, state.ID: idGenerator() and state should contain the result of parseConfig. It should subscribe to given notifier.', function(){
+        it('should have the following inner state after instantiated by a full config, callbacks and Notifier -> config: config, callbacks: callbacks, notifier: notifier, state.ID: idGenerator() and state should contain the result of parseConfig. It should subscribe to given notifier.', function(){
             let subscribeSpy = sinon.spy(notifier, 'subscribe');
             let newPill = new Pill(mockCallbacks,pillConfig,notifier);
 
-            console.log(newPill)
             assert.deepEqual(newPill.callbacks, mockCallbacks);
             assert.deepEqual(newPill.config, pillConfig);
+            assert.equal(newPill.notifier, notifier);
             let parsedConfig = newPill.parseConfig(pillConfig);
             for(let key of Object.keys(parsedConfig)){
                 assert.deepEqual(newPill.state[key], parsedConfig[key]);
