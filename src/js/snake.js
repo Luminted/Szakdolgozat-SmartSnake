@@ -12,16 +12,26 @@ import {
     idGenerator
 } from './customUtils.js';
 import cloneDeep from 'lodash/cloneDeep';
-import { start } from 'repl';
 
 export default class Snake extends ObserverEntity {
     constructor(callbacks, config, strategy, notifier) {
 
         super();
+
+        let parsedConfig
+        try {
+            parsedConfig = this.parseConfig(config);
+        } catch (e) {
+            if (typeof callbacks.propagateError == 'function') {
+                callbacks.propagateError(e);
+            } else {
+                throw e;
+            }
+        }
+
+
         this.state = {}
         this.state.ID = idGenerator();
-        let parsedConfig = this.parseConfig(config)
-        this.state.command = void 0;
         this.state.velocity = {
             x: 0,
             y: 0
@@ -30,6 +40,7 @@ export default class Snake extends ObserverEntity {
         this.state.status = "ALIVE";
         this.state.strategy = strategy;
         this.state.path = [];
+        this.state.target = undefined;
         Object.assign(this.state, parsedConfig);
 
         this.config = config;
@@ -56,6 +67,12 @@ export default class Snake extends ObserverEntity {
         for (let i = 0; i < config.baseLength; ++i) {
             parsedConfig.body[i] = new IntCoordinate(Number(config.startX), Number(config.startY));
         }
+        if (config.color) {
+            parsedConfig.color = config.color;
+        } else {
+            parsedConfig.color = 'green';
+        }
+
         return parsedConfig;
     }
 
@@ -72,11 +89,11 @@ export default class Snake extends ObserverEntity {
 
         if (this.isAlive()) {
             path = this.calculatePath();
-            if (path && path.length > 0) {
-                command = this.calculateCommand(this.head, path[0]);
+            if (path && path.length > 1) {
+                command = this.calculateCommand(this.head, path[1]);
             }
 
-            command = command || this.state.command;
+            command = command;
             if (command) {
                 commandResult = command.execute(this);
             }
@@ -114,23 +131,11 @@ export default class Snake extends ObserverEntity {
                 x: 0,
                 y: 0
             },
-            status: "ALIVE"
+            status: "ALIVE",
+            target: undefined
         }
         Object.assign(nextState, parsedConfig);
         this.setState(nextState);
-    }
-
-    setTarget(targetObject) {
-        if (targetObject == undefined || targetObject.position == undefined) {
-            this.setState({
-                target: undefined
-            });
-        } else {
-            let position = targetObject.position;
-            this.setState({
-                target: position
-            });
-        }
     }
 
     die() {
@@ -210,11 +215,8 @@ export default class Snake extends ObserverEntity {
                 this.die();
                 break;
             case ('TARGET_REACHED'):
-                let strategy = this.state.strategy;
-                if (strategy && strategy.calculateTarget) {
-                    let newTarget = strategy.calculateTarget(this);
-                    nextState.target = newTarget;
-                }
+                    nextState.target = undefined;
+                break;
         }
         return notificationResult;
     }
@@ -282,7 +284,7 @@ export default class Snake extends ObserverEntity {
         let limits = this.state.limits;
 
 
-        if(nextPosX < 0 || nextPosX >= limits.x || nextPosY < 0 || nextPosY >= limits.y){
+        if (nextPosX < 0 || nextPosX >= limits.x || nextPosY < 0 || nextPosY >= limits.y) {
             return new IntCoordinate(nextPosX, nextPosY, true);
         }
         return new IntCoordinate(nextPosX, nextPosY);
@@ -323,14 +325,24 @@ export default class Snake extends ObserverEntity {
 
     calculatePath() {
         let strategy = this.state.strategy;
-        let path;
-        if (strategy && strategy.pathfinder) {
-            let startTime = this.timer.getTime();
-            path = strategy.pathfinder(this);
-            let endTime = this.timer.getTime();
-            this.timer.get
-            let runtime = endTime - startTime;
-            this.callbacks.propagateRuntime(this.ID, runtime); 
+        let path = [];
+        if (strategy) {
+            if (typeof strategy.calculateTarget == 'function') {
+                if (this.state.target == undefined) {
+                    let target = strategy.calculateTarget(this);
+                    this.setState({
+                        target: target
+                    })
+                }
+            }
+            if (typeof strategy.pathfinder == 'function') {
+                let startTime = this.timer.getTime();
+                path = strategy.pathfinder(this);
+                let endTime = this.timer.getTime();
+                this.timer.get
+                let runtime = endTime - startTime;
+                this.callbacks.propagateRuntime(this.ID, runtime);
+            }
         }
         return path;
     }
@@ -391,7 +403,11 @@ export default class Snake extends ObserverEntity {
         return this.state.ID;
     }
 
-    get path(){
+    get path() {
         return this.state.path;
+    }
+
+    get color() {
+        return this.state.color;
     }
 }

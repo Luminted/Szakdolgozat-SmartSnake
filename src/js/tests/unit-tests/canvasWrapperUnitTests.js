@@ -1,7 +1,6 @@
 import CanvasWrapper from '../../canvasWrapper.js'
 import sinon from 'sinon'
 import assert from 'assert';
-import IntCoordinate from '../../intCoordinate.js';
 
 export default describe('Unit testing canvasWrapper.js', function () {
     let canvasWrapper;
@@ -9,7 +8,7 @@ export default describe('Unit testing canvasWrapper.js', function () {
     let height = 10;
     let HTMLCanvasMock = {
         getContext: function () {
-            let state = {
+            let ctx = {
                 fillStyle: undefined,
                 fillRect: function (posx, posy, width, height) {},
                 beginPath: function () {},
@@ -18,13 +17,13 @@ export default describe('Unit testing canvasWrapper.js', function () {
                 fill: function () {},
                 clearRect: function(posx,posy,width,height){}
             }
-            return state;
+            return ctx;
         }
 
     }
 
-    beforeEach(function () {
-        canvasWrapper = new CanvasWrapper(width, height, HTMLCanvasMock);
+    beforeEach(function setUp() {
+        canvasWrapper = new CanvasWrapper(HTMLCanvasMock, width, height);
     });
     describe('constructor', function(){
         it('should have the following inner state after instantiated with proper width, height and canvasDOMElement -> width: width, height:height, _canvas:canvasDOMElement. _ctx: canvasDOMElement.getContext("2d"), _scene: []. _scene should be empty and should set width and height of canvas element.', function(){
@@ -33,7 +32,7 @@ export default describe('Unit testing canvasWrapper.js', function () {
                 test: 'TEST'
             }
             getContextStub.returns(mockCtx)
-            let newCanvasWrapper = new CanvasWrapper(width,height,HTMLCanvasMock);
+            let newCanvasWrapper = new CanvasWrapper(HTMLCanvasMock, width,height);
             assert.equal(newCanvasWrapper.width, width);
             assert.equal(newCanvasWrapper.height, height);
             assert.deepEqual(newCanvasWrapper._canvas, HTMLCanvasMock);
@@ -45,8 +44,8 @@ export default describe('Unit testing canvasWrapper.js', function () {
             getContextStub.restore();
         });
         it('should throw error if given canvas element is undefined of getContext is not a function', function(){
-            assert.throws(()=> new canvasWrapper(width,height,undefined), Error);
-            assert.throws(()=> new canvasWrapper(width,height,{}), Error);
+            assert.throws(()=> new canvasWrapper(undefined, width,height), Error);
+            assert.throws(()=> new canvasWrapper({}, width,height), Error);
         })
     })
     describe('function createRect', function () {

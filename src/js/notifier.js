@@ -26,20 +26,33 @@ export default class Notifier extends Subject {
 
         if (board) {
             if (nextStep.nullPosition == true) {
-                console.log('<---------------WALL_COLLISION_ACITON--------------->');
+                // console.log('<---------------WALL_COLLISION_ACITON--------------->');
                 this.observers.forEach((observer) => {
                     let caller = this.callbacks.getEntityByID(callerID);
                     observer.onNotify(caller, {
                         type: "WALL_COLLISION"
                     });
                 })
+            } else {
+                let obstacles = board.obstacles;
+                for (let obstacle of obstacles) {
+                    if (obstacle.coordinates.x == nextStep.coordinates.x && obstacle.coordinates.y == nextStep.coordinates.y) {
+                        // console.log('<---------------WALL_COLLISION_ACITON--------------->');
+                        this.observers.forEach((observer) => {
+                            let caller = this.callbacks.getEntityByID(callerID);
+                            observer.onNotify(caller, {
+                                type: "WALL_COLLISION"
+                            });
+                        })
+                    }
+                }
             }
         }
 
         for (let pill of pills) {
             if (pill.position.coordinates != undefined) {
                 if (pill.position.coordinates.x === nextStep.coordinates.x && pill.position.coordinates.y === nextStep.coordinates.y) {
-                    console.log('<---------------PILL_COLLISION_ACITON--------------->');
+                    // console.log('<---------------PILL_COLLISION_ACITON--------------->');
                     this.observers.forEach((observer) => {
                         let caller = this.callbacks.getEntityByID(callerID);
                         observer.onNotify(caller, {
@@ -53,7 +66,7 @@ export default class Notifier extends Subject {
 
         if (callerSnake.target && callerSnake.target.coordinates != undefined) {
             if (callerSnake.target && (callerSnake.target.coordinates.x === nextStep.coordinates.x && callerSnake.target.coordinates.y === nextStep.coordinates.y)) {
-                console.log('<---------------TARGET_REACHED--------------->');
+                // console.log('<---------------TARGET_REACHED--------------->');
                 this.observers.forEach((observer) => {
                     observer.onNotify(callerSnake, {
                         type: 'TARGET_REACHED',
@@ -69,14 +82,14 @@ export default class Notifier extends Subject {
         }
         Object.assign(lastNodes, this.lastNodeBuffer);
         let includes = false;
-        for(let key of Object.keys(lastNodes)){
+        for (let key of Object.keys(lastNodes)) {
             includes = includes || (lastNodes[key].coordinates.x == nextStep.coordinates.x && lastNodes[key].coordinates.y == nextStep.coordinates.y);
         }
         if (!includes) {
             for (let snake of snakes) {
                 for (let node of snake.body) {
                     if (nextStep.coordinates.x === node.coordinates.x && nextStep.coordinates.y === node.coordinates.y) {
-                        console.log('<---------------BODY_COLLISION_ACITON--------------->');
+                        // console.log('<---------------BODY_COLLISION_ACITON--------------->');
                         this.observers.forEach((observer) => {
                             let caller = this.callbacks.getEntityByID(callerID);
                             observer.onNotify(caller, {
@@ -89,7 +102,7 @@ export default class Notifier extends Subject {
             }
         }
 
-        if(snakes.length == Object.keys(this.lastNodeBuffer).length){
+        if (snakes.length == Object.keys(this.lastNodeBuffer).length) {
             this.lastNodeBuffer = {};
         }
     }

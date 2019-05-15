@@ -11,36 +11,48 @@ describe('Unit testing pill.js', function () {
         startPosY: "1",
         limitX: "2",
         limitY: "2",
+        color: 'blue'
     }
     let mockCallbacks = {
-        test: function(){}
+        propagateError: function(){},
+        test: function () {}
     }
     let pill;
     let notifier;
-    beforeEach(function () {
+
+    beforeEach(function setUp() {
         notifier = new Notifier();
         pill = new Pill({}, pillConfig);
     });
 
-    describe('constructor', function(){
-        it('should have the following inner state after instantiated by a full config, callbacks and Notifier -> config: config, callbacks: callbacks, notifier: notifier, state.ID: idGenerator() and state should contain the result of parseConfig. It should subscribe to given notifier.', function(){
+    describe('constructor', function () {
+        it('should have the following inner state after instantiated by a full config, callbacks and Notifier -> config: config, callbacks: callbacks, notifier: notifier, state.ID: idGenerator() and state should contain the result of parseConfig. It should subscribe to given notifier.', function () {
             let subscribeSpy = sinon.spy(notifier, 'subscribe');
-            let newPill = new Pill(mockCallbacks,pillConfig,notifier);
+            let newPill = new Pill(mockCallbacks, pillConfig, notifier);
 
             assert.deepEqual(newPill.callbacks, mockCallbacks);
             assert.deepEqual(newPill.config, pillConfig);
             assert.equal(newPill.notifier, notifier);
             let parsedConfig = newPill.parseConfig(pillConfig);
-            for(let key of Object.keys(parsedConfig)){
+            for (let key of Object.keys(parsedConfig)) {
                 assert.deepEqual(newPill.state[key], parsedConfig[key]);
             }
             assert.equal(subscribeSpy.calledWith(newPill), true);
-            
+
             subscribeSpy.restore();
         });
-        it('should not depend on callbacks or given notifier', function(){
-            assert.doesNotThrow(()=> new Pill(undefined,pillConfig,undefined),Error);
+        it('should not absolutely depend on callbacks or given notifier', function () {
+            assert.doesNotThrow(() => new Pill(undefined, pillConfig, undefined), Error);
         });
+        it('should handle ConfigError by calling propagateError callback with thrown error if propagateError is a function and parseConfig throws an error', function(){
+            let propagateErrorSpy = sinon.spy(mockCallbacks, 'propagateError');
+            let improperConfig = {};
+
+
+            new Pill(mockCallbacks,improperConfig);
+            assert.equal(propagateErrorSpy.called,true);
+            assert.equal(propagateErrorSpy.args[0][0] instanceof Error,true);
+        })
     })
 
     describe('function parseConfig', function () {
@@ -122,7 +134,7 @@ describe('Unit testing pill.js', function () {
             }
 
         });
-        it('should return an object with fields: position: IntCoordinate, pillValue: Integer,limits:{x:Integer, y:Integer}', function () {
+        it('should return an object with fields: position: IntCoordinate, pillValue: Integer,limits:{x:Integer, y:Integer}, color: string', function () {
             let parsedConfig = pill.parseConfig(pillConfig);
             assert.equal(parsedConfig.pillValue, pillConfig.pillValue);
             assert.equal(Number.isInteger(parsedConfig.pillValue), true);
@@ -131,8 +143,21 @@ describe('Unit testing pill.js', function () {
             assert.equal(parsedConfig.position.coordinates.y, Number(pillConfig.startPosY));
             assert.equal(parsedConfig.limits.x, Number(pillConfig.limitX));
             assert.equal(parsedConfig.limits.y, Number(pillConfig.limitY));
+            assert.equal(parsedConfig.color, pillConfig.color);
 
         });
+        it('should set color to red by default', function () {
+            let pillConfig = {
+                pillValue: "1",
+                startPosX: "1",
+                startPosY: "1",
+                limitX: "2",
+                limitY: "2",
+            };
+            let parsedConfig = pill.parseConfig(pillConfig);
+            assert.equal(pillConfig.color, undefined);
+            assert.equal(parsedConfig.color, 'red');
+        })
         it('should not throw an error with a proper configuration', function () {
             assert.doesNotThrow(() => pill.parseConfig(pillConfig));
         });

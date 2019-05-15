@@ -24,24 +24,35 @@ export default class Model {
         this.notifier = new Notifier(this.passedDownCallbacks);
         this.strategies = strategies;
         
-        let parsedConfig = this.parseConfig(config);
-        this.runtimes = {};
+        let parsedConfig;
+        try{
+           parsedConfig = this.parseConfig(config);
+        }catch(e){
+            if(typeof this.propagateError == 'function'){
+                this.propagateError(e);
+            }else{
+                throw e;
+            }
+        }
+
+        if(parsedConfig){
+            this.simulationSpeed = parsedConfig.simulationSpeed;
+            this.Entities = {
+                snakes: parsedConfig.snakes,
+                pills: parsedConfig.pills,
+                board: parsedConfig.board,
+            };
+        }
 
         this.config = config;
-        this.simulationSpeed = parsedConfig.simulationSpeed;
-        this.Entities = {
-            snakes: parsedConfig.snakes,
-            pills: parsedConfig.pills,
-            board: parsedConfig.board,
-        };
         
     }
 
     update() {
+        let snakes = this.Entities.snakes;
+        let pills = this.Entities.pills;
+        let board = this.Entities.board;
         if (!this.isGameOver()) {
-            let snakes = this.Entities.snakes;
-            let pills = this.Entities.pills;
-            let board = this.Entities.board;
 
             for(let snake of snakes){
                 snake.update();
@@ -87,7 +98,13 @@ export default class Model {
 
     parseConfig(config) {
         let parsedConfig = {}
-        let enrichedConfig = this.enrichConfig(config);
+        let enrichedConfig;
+
+        if(config == undefined){
+            throw new ConfigError('Config is missing!');
+        }
+
+        enrichedConfig = this.enrichConfig(config);
         let snakeConfigs = enrichedConfig.snakeConfigs;
         let pillConfigs = enrichedConfig.pillConfigs;
         let boardConfig = enrichedConfig.boardConfig;
@@ -174,6 +191,9 @@ export default class Model {
     //*************************************************** CALLBACKS *******************************************************************************//
 
     propagateRuntime(snakeID, runtime){
+        if(this.runtimes == undefined){
+            this.runtimes = {};
+        }
         this.runtimes[snakeID] = runtime;
     }
 
@@ -182,10 +202,14 @@ export default class Model {
     }
 
     propagateError(error){
-        if(error instanceof Error){
-            return error;
+        if(this.errorBuffer == undefined){
+            this.errorBuffer = [];
         }
-        return undefined
+        if(error instanceof Error){
+            this.errorBuffer.push(error);
+            return true;
+        }
+        return false;
     }
 
     getEntityByID(ID){

@@ -55,7 +55,7 @@ describe('Unit testing Notifier class', function(){
             assert.deepEqual(newNotifier.lastNodeBuffer, {});
             assert.deepEqual(newNotifier.callbacks, mockCallBacks);
         });
-        it('should not depend on callbacks', function(){
+        it('should not absolutely depend on callbacks', function(){
             assert.doesNotThrow(() => new Notifier(undefined), Error);
         })
     })

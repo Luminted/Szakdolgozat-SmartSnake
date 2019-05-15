@@ -6,7 +6,7 @@ import IntCoordinate from './intCoordinate.js';
  * Osztály a canvas elem API-jának absztrahálására.
  */
 export default class CanvasWrapper {
-    constructor(width, height, canvasDOMElement) {
+    constructor(canvasDOMElement, width, height) {
         if(canvasDOMElement == undefined || typeof canvasDOMElement.getContext != 'function'){
             throw new Error('Cannot get render context of wrapped element.');
         }

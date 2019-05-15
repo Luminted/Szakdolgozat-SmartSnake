@@ -7,7 +7,7 @@ import LeftTurnCommand from '../../Commands/LeftTurnCommand';
 import ObserverEntity from '../../AbstractClasses/ObserverEntity.js';
 import Strategy from '../../AbstractClasses/Strategy'
 
-// Testing module integrations with by calling their update functions and validating the results
+// Testing module integrations by calling their update functions and validating the results
 describe('Running complex integration tests', function () {
     class MockObserverEntityClass extends ObserverEntity {
         constructor() {
@@ -53,7 +53,13 @@ describe('Running complex integration tests', function () {
         mockStrategy3: mockStrategyClass3
     }
     let mockCallbacks = {
-        test: function () {}
+        getEntityList: function () {
+            return {
+                snakes: [],
+                pills: [],
+                board: []
+            }
+        }
     }
     let boardConfig = {
         width: "4",
@@ -295,7 +301,7 @@ describe('Running complex integration tests', function () {
                     })
                 })
                 describe('TARGET_REACHED case:', function(){
-                    it('Snake with strategy takes a step right, reaches target. Snake should have new target set', function(){
+                    it('Snake with strategy takes a step right, reaches target. Snake target should be undefined', function(){
                         let onNotifySpy = sinon.spy(mockObserverEntity, 'onNotify');
                         let model = new Model(singleEntityConfig, mockStrategiesIndex);
                         let snake = model.getEntityList().snakes[0];
@@ -327,7 +333,7 @@ describe('Running complex integration tests', function () {
                         let eventType = onNotifySpy.args[0][1].type;
                         assert.equal(eventType, 'TARGET_REACHED');
                         assert.deepEqual(snake.head, target);
-                        assert.deepEqual(snake.target, newTarget);
+                        assert.deepEqual(snake.target, undefined);
 
                         onNotifySpy.restore();
                         boardUpdateSpy.restore();

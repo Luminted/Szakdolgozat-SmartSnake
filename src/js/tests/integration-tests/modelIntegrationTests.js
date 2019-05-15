@@ -112,7 +112,6 @@ describe('Integration tests of class Model', function () {
 
             assert.equal(newModel.notifier instanceof Notifier, true);
             assert.deepEqual(newModel.strategies, mockStrategiesIndex);
-            assert.deepEqual(newModel.runtimes, {});
             assert.equal(typeof newModel.passedDownCallbacks.getEntityList, 'function');
             assert.equal(typeof newModel.passedDownCallbacks.getEntityByID, 'function');
             assert.equal(typeof newModel.passedDownCallbacks.propagateError, 'function');
@@ -126,9 +125,11 @@ describe('Integration tests of class Model', function () {
             }
             assert.equal(newModel.Entities.board instanceof Board, true);
         });
-        // it('should not be dependent on callbacks or strategy index', function () {
-        //     assert.doesNotThrow(() => new Model(undefined, config, undefined), Error);
-        // });
+        it('should handle arising from parseConfig by calling propagateError callback with thrown error if propagateError is a function', function(){
+            let newModel = new Model();
+
+            assert.notEqual(newModel.errorBuffer, undefined);
+        })
     })
     describe('function update', function () {
         it('should call update on all entities, once, if isGameOver returns false', function () {
@@ -247,6 +248,13 @@ describe('Integration tests of class Model', function () {
                 let ID = 'id-TEST'
                 model.passedDownCallbacks.propagateRuntime(ID,runTime);
                 assert.equal(model.runtimes[ID], runTime);
+            });
+            it('should create runtimes object if it is undefined', function(){
+                model.runtimes = undefined;
+
+                model.propagateRuntime('ID', 123);
+
+                assert.notEqual(model.runtimes, undefined);
             })
         })
         describe('function getEntityByID', function () {
@@ -291,18 +299,36 @@ describe('Integration tests of class Model', function () {
             });
         });
         describe('function propagateError', function () {
-            it('should return error given as argument it is actually an error', function () {
+            it('should add error to errorBuffer and return true if given error instance of Error', function () {
+                model.errorBuffer = [];
                 let error = new Error('TEST');
-                let propagatedError = model.propagateError(error);
-                assert.deepEqual(propagatedError, error);
+                let result = model.propagateError(error);
+
+                assert.equal(error instanceof Error, true);
+                assert.deepEqual(result, true);
+                assert.deepEqual(model.errorBuffer[0], error);
             });
-            it('should return undefined if argument is not instance of Error', function () {
+            it('should return false and not add error to errorBuffer if argument is not instance of Error', function () {
+                model.errorBuffer = [];
                 let error = {
                     message: 'TEST'
                 }
-                let propagatedError = model.propagateError(error);
-                assert.equal(propagatedError, undefined);
+
+                let result = model.propagateError(error);
+
+                assert.equal(error instanceof Error, false);
+                assert.equal(result, false);
+                assert.equal(model.errorBuffer.length == 0, true);
+            });
+            it('should create errorBuffer if it is undefined', function(){
+                model.errorBuffer = undefined;
+                let error = new Error();
+
+                model.propagateError(error);
+
+                assert.notEqual(model.errorBuffer, undefined);
             })
+            
         })
     })
     describe('function snakeFactory', function () {
@@ -443,6 +469,14 @@ describe('Integration tests of class Model', function () {
             assert.equal(Number.isInteger(result.simulationSpeed), true);
             assert.equal(result.simulationSpeed, Number(config.main.simulationSpeed));
         });
+        it('should throw a ConfigError if given config is undefined', function(){
+            assert.throws(() => model.parseConfig(), Error);
+            try{
+                model.parseConfig();
+            }catch(e){
+                assert.equal(e.name, 'ConfigError');
+            }
+        })
         it('should throw ConfigError if essential fields are missing from config or if config is misshapen. Essential fields: main.simulationSpeed, snakeConfig.strategy. Proper shape: {mainConfig: Object, snakeConfigs: Array, pillConfigs: Array, boardConfig: Object}. Fields may be undefined', function () {
             let MissingMainSpeed = {
                 main: {},
@@ -587,6 +621,5 @@ describe('Integration tests of class Model', function () {
             assert.equal(enrichConfigSpy.called, true);
             assert.deepEqual(pill.config, enrichedConfig.pillConfigs[0]);
         })
-        //TODO: PropagateError
     })
 })

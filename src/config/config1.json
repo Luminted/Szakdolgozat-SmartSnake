@@ -1,0 +1,40 @@
+{
+    "main":{
+        "simulationSpeed":1
+    },
+    "boardConfig":{
+        "width": 15,
+        "height": 15,
+        "obstacles": [
+            {
+                "position": {
+                    "x": 3,
+                    "y": 4
+                }
+            }
+        ]
+    },
+    "snakeConfigs": [{
+        "baseLength": "2",
+        "startX": "0",
+        "startY": "0",
+        "startDirection": "RIGHT",
+        "startVelocity": "1",
+        "strategy": "plainAStarStrategy",
+        "color": "#E8E85C"
+    },
+    {
+        "baseLength": "2",
+        "startX": "3",
+        "startY": "3",
+        "startDirection": "LEFT",
+        "startVelocity": "1",
+        "strategy": "plainAStarStrategy",
+        "color": "#ECA880"
+    }],
+    "pillConfigs": [{
+        "pillValue": 1,
+        "startPosX": 14,
+        "startPosY": 14
+    }]
+}

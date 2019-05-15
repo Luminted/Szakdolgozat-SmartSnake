@@ -25,6 +25,20 @@ describe('Integration test of Notifier', function () {
         width: "3",
         height: "3"
     }
+
+    let boardConfigWithObstacles = {
+        width: "3",
+        height: "3",
+        obstacles: [
+            {
+                position: {
+                    x: 2,
+                    y: 1
+                }
+            }
+        ]
+    }
+
     let snakeConfig1 = {
         baseLength: "1",
         startX: "1",
@@ -94,6 +108,7 @@ describe('Integration test of Notifier', function () {
     let pill1;
     let pill2;
     let board;
+    let boardWithObstacle;
     let mockObserverEntity;
     let notifier
 
@@ -106,6 +121,8 @@ describe('Integration test of Notifier', function () {
         pill1 = new Pill(mockCallBacks, pillConfig1, notifier);
         pill2 = new Pill(mockCallBacks, pillConfig2, notifier);
         board = new Board(mockCallBacks, boardConfig);
+        boardWithObstacle = new Board(mockCallBacks, boardConfigWithObstacles);
+        
     })
 
     describe('function calculateStepCollisionType', function () {
@@ -154,17 +171,34 @@ describe('Integration test of Notifier', function () {
         describe('WALL_COLLISION case:', function () {
 
 
-            it("should send a notification, once, with type: 'WALL_COLLISION' and entity: caller Snake, if given next step is null position", function () {
+            it("should send a notification, once, with type: 'WALL_COLLISION' and entity: caller Snake, if given next step is null position or is stepping to the position of an obstacle", function () {
                 let mockObserverOnNotifySpy = sinon.spy(mockObserverEntity, 'onNotify');
                 let nextStep;
 
+                //out of bounds case
                 nextStep = new IntCoordinate(0, 0, true);
                 notifier.calculateStepCollisionType(nextStep, callerID);
                 assert.equal(mockObserverOnNotifySpy.called, true);
                 assert.equal(mockObserverOnNotifySpy.args[0][1].type, 'WALL_COLLISION');
                 assert.equal(mockObserverOnNotifySpy.args[0][0].ID, callerID);
 
+                mockObserverOnNotifySpy.resetHistory();
+
+                //obstacle case
+                let getEntityListStub = sinon.stub(mockCallBacks, 'getEntityList');
+                getEntityListStub.returns({
+                    snakes: [],
+                    pills: [],
+                    board: boardWithObstacle
+                })
+                nextStep = new IntCoordinate(2, 1, false);
+                notifier.calculateStepCollisionType(nextStep, callerID);
+                assert.equal(mockObserverOnNotifySpy.called, true);
+                assert.equal(mockObserverOnNotifySpy.args[0][1].type, 'WALL_COLLISION');
+                assert.equal(mockObserverOnNotifySpy.args[0][0].ID, callerID);
+
                 mockObserverOnNotifySpy.restore();
+                getEntityListStub.restore();
             });
         });
         describe('PILL_COLLISION case:', function () {

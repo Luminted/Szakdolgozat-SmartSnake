@@ -8,13 +8,26 @@ import {idGenerator} from './customUtils'
 export default class Pill extends ObserverEntity {
     constructor(callbacks, config, notifier) {
         super();
-        let parsedConfig = this.parseConfig(config);
-        this.state = parsedConfig;
+        
+        let parsedConfig
+        try{
+           parsedConfig = this.parseConfig(config);
+        }catch(e){
+            if(typeof callbacks.propagateError == 'function'){
+                callbacks.propagateError(e);
+            }else{
+                throw e;
+            }
+        }
+
+        this.state = {};
         this.state.ID = idGenerator();
 
 
         this.callbacks = callbacks;
         this.config = config;
+
+        Object.assign(this.state, parsedConfig);
 
         if (notifier) {
             this.notifier = notifier;
@@ -33,6 +46,12 @@ export default class Pill extends ObserverEntity {
         parsedConfig.limits = {};
         parsedConfig.limits.x = Number(config.limitX);
         parsedConfig.limits.y = Number(config.limitY);
+
+        if(config.color){
+            parsedConfig.color = config.color;
+        }else{
+            parsedConfig.color = 'red';
+        }
 
         return parsedConfig;
     }
@@ -72,15 +91,16 @@ export default class Pill extends ObserverEntity {
         let limitX = this.state.limits.x;
         let limitY = this.state.limits.x;
         let snakes = this.callbacks.getEntityList().snakes;
+        let obstacles = this.callbacks.getEntityList().board.obstacles;
         let appendedSnakeBodies = [];
 
         for (let snake of snakes) {
             appendedSnakeBodies.push(...snake.body);
         }
-        if (appendedSnakeBodies.length >= limitX * limitY) {
+        if (appendedSnakeBodies.length + obstacles.length >= limitX * limitY) {
             return new IntCoordinate(undefined, undefined, true);
         } else {
-            let freePositions = this.calculateFreePositions(appendedSnakeBodies);
+            let freePositions = this.calculateFreePositions(appendedSnakeBodies, obstacles);
             let randomPosIndex = Math.trunc(Math.random() * (freePositions.length - 1));
             let randomPosition = freePositions[randomPosIndex];
             return new IntCoordinate(randomPosition.x, randomPosition.y);
@@ -88,7 +108,7 @@ export default class Pill extends ObserverEntity {
 
     }
 
-    calculateFreePositions(snakeBody) {
+    calculateFreePositions(snakeBody, obstacles) {
         let limitX = this.state.limits.x;
         let limitY = this.state.limits.x;
         let positions = []
@@ -105,6 +125,12 @@ export default class Pill extends ObserverEntity {
             positions.splice(index, 1);
             positions;
         }
+        for (let obstacle of obstacles) {
+            let index = obstacle.coordinates.x * limitX + obstacle.coordinates.y
+            positions.splice(index, 1);
+            positions;
+        }
+
         return positions;
     }
 
@@ -118,5 +144,9 @@ export default class Pill extends ObserverEntity {
 
     get ID(){
         return this.state.ID;
+    }
+
+    get color(){
+        return this.state.color;
     }
 }

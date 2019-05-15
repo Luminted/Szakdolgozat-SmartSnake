@@ -5,3 +5,5 @@ import intCoordinateUnitTests from './intCoordinateUnitTests.js';
 import canvasWrapperUnitTests from './canvasWrapperUnitTests.js';
 import notifierUnitTests from './notifierUnitTests.js';
 import commandUnitTests from './commandUnitTests.js';
+import mainUnitTests from './mainUnitTests.js';
+import aStarAlgorithmUnitTests from './aStarAlgorithmUnitTests.js';

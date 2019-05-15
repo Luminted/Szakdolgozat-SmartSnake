@@ -22,25 +22,30 @@ export default {
             startVelocity: "1",
             strategy: "AStar",
             limitX: "2",
-            limitY: "2"
+            limitY: "2",
+            color:'red'
         }
         let mockStrategy = {
-            test: function () {
+            pathfinder: function () {
 
+            },
+            calculateTarget: function(){
+                
             }
         }
         let mockCallbacks = {
+            propagateError: function(){},
             test: function () {}
         }
         let notifier;
         let snake;
 
-        beforeEach(function () {
+        beforeEach(function setUp() {
             notifier = new Notifier();
             snake = new Snake({}, snakeConfig);
         });
         describe('contructor', function () {
-            it('should have the following inner state if instantiated with a full config, callbacks, strategy, Notifier, callbacks: callbacks, notifier: Notifier, timer: Date, config: config,state.ID: customUtils/idGenerator(),state.strategy:strategy, state.command: undefined, state.notificationBuffer: [], state.status: "ALIVE", state.path: [], state.velocity: {x:0, y:0},  and the result of parsedConfig should be added too. Snake should subscribe to the given notifier.', function () {
+            it('should have the following inner state if instantiated with a full config, callbacks, strategy, Notifier, callbacks: callbacks, notifier: Notifier, timer: Date, config: config,state.ID: customUtils/idGenerator(),state.strategy:strategy, state.notificationBuffer: [], state.status: "ALIVE", state.path: [], state.velocity: {x:0, y:0},  and the result of parsedConfig should be added too. Snake should subscribe to the given notifier.', function () {
                 let subscribeSpy = sinon.spy(notifier, 'subscribe');
                 let newSnake = new Snake(mockCallbacks, snakeConfig, mockStrategy, notifier);
                 let parsedConfig = newSnake.parseConfig(snakeConfig);
@@ -50,7 +55,6 @@ export default {
                 assert.equal(newSnake.notifier, notifier);
                 assert.equal(newSnake.timer instanceof Date, true);
                 assert.equal(newSnake.state.ID.split('-')[0], 'id');
-                assert.equal(newSnake.state.command, undefined);
                 assert.deepEqual(newSnake.state.notificationBuffer, []);
                 assert.equal(newSnake.state.status, 'ALIVE');
                 assert.deepEqual(newSnake.state.strategy, mockStrategy);
@@ -62,12 +66,21 @@ export default {
 
                 subscribeSpy.restore();
             });
-            it('should not have a dependency on callbacks, strategy or notifier', function(){
+            it('should not have an absolute dependency on callbacks, strategy or notifier', function(){
                 assert.doesNotThrow(() => new Snake(undefined,snakeConfig,undefined,undefined), Error);
+            });
+            it('should handle ConfigError by calling propagateError callback with thrown error if propagateError is a function and parseConfig throws an error', function(){
+                let propagateErrorSpy = sinon.spy(mockCallbacks, 'propagateError');
+                let improperConfig = {};
+
+
+                new Snake(mockCallbacks,improperConfig);
+                assert.equal(propagateErrorSpy.called,true);
+                assert.equal(propagateErrorSpy.args[0][0] instanceof Error,true);
             })
         })
         describe('function parseConfig', function () {
-            it('should return an object with fields body: [IntCoordinates->nullPosition = false], direction: (LEFT | RIGHT | UP | DOWN), baseVelocity: integer, limits: {x: integer, y: integer}', function () {
+            it('should return an object with fields body: [IntCoordinates->nullPosition = false], direction: (LEFT | RIGHT | UP | DOWN), baseVelocity: integer, limits: {x: integer, y: integer}, color: string', function () {
                 let snakeConfig = {
                     startVelocity: "1",
                     baseLength: "2",
@@ -75,7 +88,8 @@ export default {
                     startY: "0",
                     startDirection: "RIGHT",
                     limitX: "2",
-                    limitY: "2"
+                    limitY: "2",
+                    color: 'red'
                 }
                 let directions = new Set(['LEFT', 'RIGHT', 'UP', 'DOWN']);
                 let parsedConfig = snake.parseConfig(snakeConfig);
@@ -90,7 +104,22 @@ export default {
                 assert.equal(Number.isInteger(parsedConfig.limits.y), true);
                 assert.equal(Number.isInteger(parsedConfig.baseVelocity), true);
                 assert.equal(directions.has(parsedConfig.direction), true);
+                assert.equal(parsedConfig.color, snakeConfig.color);
             });
+            it('should set parsedConfig.color to "green" by default', function(){
+                let snakeConfig = {
+                    startVelocity: "1",
+                    baseLength: "2",
+                    startX: "0",
+                    startY: "0",
+                    startDirection: "RIGHT",
+                    limitX: "2",
+                    limitY: "2",
+                }
+                let parsedConfig = snake.parseConfig(snakeConfig);
+                assert.equal(snakeConfig.color, undefined);
+                assert.equal(parsedConfig.color, 'green');
+            })
             it('should raise a ConfigError if config is missing', function(){
                 assert.throws(() => snake.parseConfig(), Error);
                 try{
@@ -98,7 +127,7 @@ export default {
                 }catch(e){
                     assert.equal(e.name, 'ConfigError');
                 }
-            })
+            });
             it('should raise an ConfigError if the config is missing vital information', function () {
                 let config1 = {
                     // startVelocity: "1",
@@ -170,8 +199,6 @@ export default {
                     // limitY: "3"
                 }
 
-
-                //TODO: check for custom error
                 assert.throws(function () {
                     snake.parseConfig(config1)
                 }, Error);
@@ -490,6 +517,7 @@ export default {
                 snake.reset();
 
                 assert.deepEqual(snake.state, Object.assign(initialState, parsedConfig));
+                assert.equal(snake.target, undefined);
 
             });
         });

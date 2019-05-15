@@ -3,6 +3,7 @@ import IntCoordinate from '../../intCoordinate'
 import Snake from '../../snake'
 import assert from 'assert'
 import sinon from 'sinon';
+import Board from "../../board";
 
 export default describe('Integration tests of Pill', function(){
 
@@ -34,6 +35,30 @@ export default describe('Integration tests of Pill', function(){
         limitX: "3",
         limitY: "3"
     }
+    let boardConfig1 = {
+        width: '3',
+        height: '3',
+        obstacles : [
+            {
+                position:{
+                    x:2,
+                    y:1
+                }
+            }
+        ]
+    }
+    let boardConfig2 = {
+        width: '3',
+        height: '3',
+        obstacles : [
+            {
+                position:{
+                    x:2,
+                    y:1
+                }
+            }
+        ]
+    }
     let mockCallbacks = {
         getEntityList: function(){}
     }
@@ -42,12 +67,12 @@ export default describe('Integration tests of Pill', function(){
         pill = new Pill(mockCallbacks, pillConfig, undefined);
     })
     
-    //TODO: this is a unit test
     describe('function onNotify', function () {
         it("Notification: PILL_COLLISION. Should call calculateNewRandomPosition once and set the position based on it's return value", function () {
             let calculateNewRandomPositionSpy = sinon.spy(pill, 'calculateNewRandomPosition');
             let getEntityListStub = sinon.stub(mockCallbacks, 'getEntityList');
             let snake = new Snake(undefined, snakeConfig1);
+            let board = new Board(undefined, boardConfig1)
             snake.setState({
                 body:[new IntCoordinate(0,0),new IntCoordinate(1,0)]
             });
@@ -55,7 +80,8 @@ export default describe('Integration tests of Pill', function(){
                 type: 'PILL_COLLISION'
             }
             getEntityListStub.returns({
-                snakes: [snake]
+                snakes: [snake],
+                board: board
             })
             pill.onNotify(undefined, notification);
             assert.equal(calculateNewRandomPositionSpy.calledOnce, true);
@@ -67,38 +93,42 @@ export default describe('Integration tests of Pill', function(){
         });
     });
     describe('function calculateNewRandomPosition', function () {
-        it('should return an IntCoordinate object with nullPosition = true if the board is full a.k.a the length of snakes is equal to the size of the board', function () {
+        it('should return an IntCoordinate object with nullPosition = true if the board is full a.k.a the length of snakes, plus the number of obstacles, is equal to the size of the board', function () {
             pill.setState({
                 limits: {
                     x:2,
                     y:2
                 }
             });
+            let board = new Board(undefined,boardConfig1);
 
             let snake1 = new Snake({},snakeConfig1);
             let snake2 = new Snake({},snakeConfig1);
             snake1.setState({
-                body: [new IntCoordinate(0,0),new IntCoordinate(1,0)]
+                body: [new IntCoordinate(0,0)]
             })
             snake2.setState({
                 body: [new IntCoordinate(0,1),new IntCoordinate(1,1)]
             });
             let getEntityListStub = sinon.stub(pill.callbacks, "getEntityList");
             getEntityListStub.returns({
-                snakes: [snake1,snake2]
+                snakes: [snake1,snake2],
+                board: board
             });
             let calculatedCoord = pill.calculateNewRandomPosition();
             assert.equal(calculatedCoord.nullPosition, true);
             getEntityListStub.restore();
         });
-        it("should call calculateFreePositions with appended bodies of Snakes and return an element from it's result if total size of snakes is less than the size of Board", function () {
+        it("should call calculateFreePositions with appended bodies of Snakes and return an element from it's result if total size of snakes, plus the number of obstacles, is less than the size of Board", function () {
             let calculateFreePositionsStub = sinon.stub(pill, 'calculateFreePositions');
             let getEntityListStub = sinon.stub(mockCallbacks, 'getEntityList');
             let snakes = [new Snake(undefined,snakeConfig1), new Snake(undefined,snakeConfig2)]
             let limits = pill.state.limits;
+            let board = new Board(undefined, boardConfig2);
             
             getEntityListStub.returns({
-                snakes: snakes
+                snakes: snakes,
+                board: board
             })
             calculateFreePositionsStub.returns([
                 new IntCoordinate(0, 1),
@@ -124,9 +154,10 @@ export default describe('Integration tests of Pill', function(){
 
     });
     describe('function calculateFreePositions', function () {
-        it('should return a list of objects with x and y coordinates which correspong to spaces on board which are not occupied by Snakes', function () {
+        it('should return a list of objects with x and y coordinates which correspong to spaces on board which are not occupied by Snakes or ostacles', function () {
             //setting up edge case
-            let snakeBodies = [new IntCoordinate(0, 0), new IntCoordinate(1, 1)];
+            let snakeBodies = [new IntCoordinate(0, 0)];
+            let obstacles = [new IntCoordinate(1, 1)]
             pill.setState({
                 limits: {
                     x: 2,
@@ -134,21 +165,23 @@ export default describe('Integration tests of Pill', function(){
                 },
             });
 
-            let freeSpaces = pill.calculateFreePositions(snakeBodies);
+            let freeSpaces = pill.calculateFreePositions(snakeBodies, obstacles);
             assert.equal(Array.isArray(freeSpaces), true);
-            for (let space of freeSpaces) {
-                for (let node of snakeBodies) {
-                    assert.notDeepEqual(node, space);
-                }
-            }
+            assert.equal(freeSpaces[0].x, 0);
+            assert.equal(freeSpaces[0].y, 1);
+            assert.equal(freeSpaces[1].x, 1);
+            assert.equal(freeSpaces[1].y, 0);
+            
         });
 
         it('should return an IntCoordinate with x and y values within the limits', function () {
             let snakeBody = [new IntCoordinate(0, 0)];
             let getEntityListStub = sinon.stub(mockCallbacks, 'getEntityList');
-            let snakes = [new Snake(undefined,snakeConfig1), new Snake(undefined,snakeConfig2)]            
+            let snakes = [new Snake(undefined,snakeConfig1), new Snake(undefined,snakeConfig2)]
+            let board = new Board(undefined, boardConfig1)            
             getEntityListStub.returns({
-                snakes: snakes
+                snakes: snakes,
+                board: board,
             })
             let newPosition = pill.calculateNewRandomPosition(snakeBody);
 
