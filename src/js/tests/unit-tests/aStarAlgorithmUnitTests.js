@@ -4,7 +4,7 @@ import Pill from '../../pill';
 import Snake from '../../snake';
 import IntCoordinate from '../../intCoordinate.js';
 import AStarALgorithm, { getNeighbors, AStarPreprocess, reconstructPath, minScoreLabelSelect} from '../../pathfinding-algorithms/aStarAlgorithm.js';
-import {squaredEuclideanDistance} from '../../customUtils'
+import {EuclideanDistance} from '../../customUtils'
 
 describe('Unit testing AStarALgorithm', function () {
 
@@ -51,7 +51,7 @@ describe('Unit testing AStarALgorithm', function () {
         startY: "0",
         startDirection: "RIGHT",
         startVelocity: "1",
-        strategy: "EucledianSquaredStrategy",
+        strategy: "plainAStarStrategy",
         color: "#E8E85C",
         limitX: 10,
         limitY: 10
@@ -62,7 +62,7 @@ describe('Unit testing AStarALgorithm', function () {
         startY: "0",
         startDirection: "RIGHT",
         startVelocity: "1",
-        strategy: "EucledianSquaredStrategy",
+        strategy: "plainAStarStrategy",
         color: "#E8E85C",
         limitX: 10,
         limitY: 10
@@ -95,7 +95,7 @@ describe('Unit testing AStarALgorithm', function () {
             assert.notDeepEqual(scoreTables.gScoreTable, undefined);
             assert.notDeepEqual(scoreTables.fScoreTable, undefined);
 
-            let path = AStarALgorithm(squaredEuclideanDistance,start, goal, scoreTables.gScoreTable, scoreTables.fScoreTable, dimensions);
+            let path = AStarALgorithm(EuclideanDistance,start, goal, scoreTables.gScoreTable, scoreTables.fScoreTable, dimensions);
 
             for (let node of path) {
                 assert.equal(node instanceof IntCoordinate, true);
@@ -115,7 +115,7 @@ describe('Unit testing AStarALgorithm', function () {
             assert.notDeepEqual(scoreTables.gScoreTable, undefined);
             assert.notDeepEqual(scoreTables.fScoreTable, undefined);
 
-            let path = AStarALgorithm(squaredEuclideanDistance,start, goal, scoreTables.gScoreTable, scoreTables.fScoreTable, dimensions);
+            let path = AStarALgorithm(EuclideanDistance,start, goal, scoreTables.gScoreTable, scoreTables.fScoreTable, dimensions);
 
             assert.deepEqual(path, []);
         })

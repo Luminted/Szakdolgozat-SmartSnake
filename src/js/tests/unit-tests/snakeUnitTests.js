@@ -20,7 +20,7 @@ export default {
             startY: "0",
             startDirection: 'RIGHT',
             startVelocity: "1",
-            strategy: "EucledianSquared",
+            strategy: "AStar",
             limitX: "2",
             limitY: "2",
             color:'red'
