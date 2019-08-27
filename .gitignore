@@ -1,6 +1,5 @@
 node_modules
-src/dist/main.bundle.js
-src/dist/main.bundle.js.map
+dist
 npm-debug.log
 .idea
 .idea/Szakdolgozat-SmartSnake.iml
@@ -13,5 +12,3 @@ npm-debug.log
 jsconfig.json
 env.json
 .vscode
-dist/main.bundle.js
-dist/main.bundle.js
