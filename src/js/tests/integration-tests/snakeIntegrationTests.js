@@ -34,7 +34,7 @@ describe('Integration test of Snake', function () {
         startY: "0",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar",
+        strategy: "EucledianSquared",
         limitX: "3",
         limitY: "3"
     }

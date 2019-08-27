@@ -45,7 +45,7 @@ describe('Integration test of Notifier', function () {
         startY: "1",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar",
+        strategy: "EucledianSquared",
         limitX: "3",
         limitY: "3"
     }
@@ -55,7 +55,7 @@ describe('Integration test of Notifier', function () {
         startY: "0",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar",
+        strategy: "EucledianSquared",
         limitX: "3",
         limitY: "3"
     }
@@ -65,7 +65,7 @@ describe('Integration test of Notifier', function () {
         startY: "1",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar",
+        strategy: "EucledianSquared",
         limitX: "3",
         limitY: "3"
     }
