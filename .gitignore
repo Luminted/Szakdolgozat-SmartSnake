@@ -13,3 +13,5 @@ npm-debug.log
 jsconfig.json
 env.json
 .vscode
+dist/main.bundle.js
+dist/main.bundle.js
