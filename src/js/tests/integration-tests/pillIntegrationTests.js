@@ -21,7 +21,7 @@ export default describe('Integration tests of Pill', function(){
         startY: "1",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar",
+        strategy: "EucledianSquared",
         limitX: "3",
         limitY: "3"
     }
@@ -31,7 +31,7 @@ export default describe('Integration tests of Pill', function(){
         startY: "0",
         startDirection: 'RIGHT',
         startVelocity: "1",
-        strategy: "AStar",
+        strategy: "EucledianSquared",
         limitX: "3",
         limitY: "3"
     }
