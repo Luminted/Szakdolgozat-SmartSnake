@@ -20,7 +20,7 @@
         "startY": "0",
         "startDirection": "RIGHT",
         "startVelocity": "1",
-        "strategy": "plainAStarStrategy",
+        "strategy": "EucledianSquaredStrategy",
         "color": "#E8E85C"
     },
     {
@@ -29,7 +29,7 @@
         "startY": "3",
         "startDirection": "LEFT",
         "startVelocity": "1",
-        "strategy": "plainAStarStrategy",
+        "strategy": "EucledianSquaredStrategy",
         "color": "#ECA880"
     }],
     "pillConfigs": [{

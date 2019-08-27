@@ -28,7 +28,6 @@ function simulate(times, config) {
 function createDump(runs, model, times) {
     let snakes = model.getEntityList().snakes;
     let board = model.getEntityList().board;
-    let dimensions = board.dimensions;
 
     for(let snake of snakes){
         let snakeStats = runs.filter((run) => run.id == snake.ID);
@@ -36,7 +35,7 @@ function createDump(runs, model, times) {
         for(let snakeStat of snakeStats){
             scoreSum += snakeStat.score;
         }
-        let fitness = scoreSum / times;
+        let fitness = scoreSum;
         console.log('Id: ' + snake.ID + '\n' + 'strategy: ' + snake.config.strategy + '\n' + 'fitness: ' + fitness);
     }
 }

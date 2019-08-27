@@ -12,7 +12,7 @@
         "startY": "0",
         "startDirection": "RIGHT",
         "startVelocity": "1",
-        "strategy": "plainAStarStrategy",
+        "strategy": "ManhattanHeurism",
         "color": "#E8E85C"
     }
     ],

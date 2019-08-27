@@ -1,5 +1,7 @@
-import plainAStarStrategy from './plainAStar';
+import {squaredEuclideanDistance} from '../customUtils';
+import {ManhattanDistanceHeurism} from '../customUtils';
 
 export default {
-    plainAStarStrategy: plainAStarStrategy
+    EucledianSquared: squaredEuclideanDistance,
+    ManhattanHeurism: ManhattanDistanceHeurism
 }

@@ -26,7 +26,7 @@ export default function AStar(heurisim, start, goal, gscoreTable, fScoreTable, d
             }
 
             //szomszédos mező távolsága
-            let tentativegscore = gscoreTable[currentLabel].score + EuclideanDistance(fScoreTable[currentLabel].position, fScoreTable[neighbor].position) + (1 + 1/1000);
+            let tentativegscore = gscoreTable[currentLabel].score + EuclideanDistance(fScoreTable[currentLabel].position, fScoreTable[neighbor].position);
 
             if (!openLabelSet.has(neighbor)) {
                 openLabelSet.add(neighbor);
@@ -45,7 +45,7 @@ export default function AStar(heurisim, start, goal, gscoreTable, fScoreTable, d
 //Square of Eucllabelean distance
 // TODO: makes this passed argument
 function heuristicCostEstimate(heurisim, from, to) {
-    return Math.pow(heurisim(from, to), 2);
+    return heurisim(from, to);
 }
 
 export function minScoreLabelSelect(labelSet, table) {
