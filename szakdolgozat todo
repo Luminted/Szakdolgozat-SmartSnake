@@ -1,0 +1,81 @@
+Snake
+=====
++processStep
++processCollision -> processNotifications
++_handleWallCollision
++_handleTailCollision
++_handleMutualCollision
++_handlePillCollision
++getBody
++get head
++get tail
++get direction
++move
++handleInput
+
+Pill
+====
++getEffect
++getPosition
++processCollision -> processNotification
++_setState
+-_generatePositon //needs to know how  graph rep will look like
+
+CollisionDetector
+=================
++checkCollision -> redo for get boardstate
++_checkWallCollision
++_checkMutualCollision
++_checkTailCollision
++_checkPillCollision
++_createnotification
++subscribe
++unsubscribe
+
+Model
+=====
+-update
++getGameState
+-generateGraph
++getBoardState
++getStrategyNames
++changeBoardDimensions
++addSnake
++addPill
++addWall
++removeSnake
++removePill
++removeWall
+-notification handler functions...
+
+Strategy
+========
+-calculatePath
+-setGraph
+-calculateTarget
+
+Service
+=======
++addSnake
++addPill
++addWall
++changeBoardDimensions
++getBoardState
++getGameState
++updateGame
++getStrategies
++getEffects
+
+BufferedObserver
+================
+-addNotification
+
+rewrite test to for using setstate
+
+Integration test
+================
+TODO
+
+System tests
+============
+TODO
